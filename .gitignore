@@ -15,8 +15,11 @@ wheels/
 *.onefile-build/
 *.exe
 
-# Recordings
+# Recordings & Screenshots
 recordings/
+screenshots/
+config.json
 
 # Lock file (optional, remove if you want to commit it)
 uv.lock
+

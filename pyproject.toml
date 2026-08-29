@@ -1,7 +1,7 @@
 [project]
 name = "screenvideo"
-version = "0.1.0"
-description = "Screen recorder with hotkey controls"
+version = "1.0.0"
+description = "ScreenCapture Pro - Professional zero-memory screen recorder with modern UI and hotkey controls"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -10,8 +10,8 @@ dependencies = [
     "mss>=9.0.0",
     "keyboard>=0.13.5",
     "ttkbootstrap>=1.10.0",
-    "pillow>=12.0.0",
-    "nuitka>=2.8.9",
+    "pillow>=10.0.0",
+    "nuitka>=2.0.0",
 ]
 
 [tool.ruff]
