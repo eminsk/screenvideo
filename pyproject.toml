@@ -12,6 +12,9 @@ dependencies = [
     "ttkbootstrap>=1.10.0",
     "pillow>=10.0.0",
     "nuitka>=2.0.0",
+    "soundcard>=0.4.6",
+    "soundfile>=0.14.0",
+    "imageio-ffmpeg>=0.6.0",
 ]
 
 [tool.ruff]

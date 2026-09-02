@@ -79,7 +79,8 @@ class CursorRenderer:
                     lineType=cv2.LINE_AA,
                 )
                 # Alpha blend halo
-                cv2.addWeighted(overlay, 0.35, roi, 0.65, 0, roi)
+                blended = cv2.addWeighted(overlay, 0.35, roi, 0.65, 0)
+                frame[y1:y2, x1:x2] = blended
                 # Outer ring border
                 cv2.circle(
                     frame,

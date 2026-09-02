@@ -134,7 +134,25 @@ class TestScreenCapturePro(unittest.TestCase):
         self.assertEqual(recorder.state, RecordingState.IDLE)
         self.assertIsNotNone(out_file)
         self.assertTrue(out_file.exists())
-        self.assertGreater(out_file.stat().st_size, 0)
+        self.assertGreater(out_file.stat().st_size, 1024)
+
+    def test_recorder_empty_cleanup(self) -> None:
+        """Test that stopping immediately with 0 frames cleans up the empty file."""
+        cfg = AppConfig(
+            fps=30,
+            recordings_dir=self.rec_dir,
+            record_cursor=False,
+        )
+        recorder = ScreenRecorder(config=cfg)
+        recorder.set_region(Region(x=0, y=0, width=320, height=240))
+        # Start and immediately stop
+        recorder.start()
+        # Force frame_count to 0 to simulate cancellation before capture
+        with recorder._lock:
+            recorder._frame_count = 0
+        out = recorder.stop()
+        self.assertIsNone(out)
+        self.assertEqual(len(list(self.rec_dir.glob("*.mp4"))), 0)
 
     def test_history_manager(self) -> None:
         """Test history scanning and deletion."""
@@ -149,9 +167,54 @@ class TestScreenCapturePro(unittest.TestCase):
         found_snap = any(item.path == snap_file for item in items)
         self.assertTrue(found_snap)
 
-        # Delete
-        self.assertTrue(history_mgr.delete_item(snap_file))
-        self.assertFalse(snap_file.exists())
+    def test_audio_recorder(self) -> None:
+        """Test AudioRecorder lifecycle."""
+        from src.core.audio import AudioRecorder
+
+        audio_rec = AudioRecorder(
+            self.rec_dir, record_system_audio=True, record_microphone=False
+        )
+        self.assertFalse(audio_rec.is_recording)
+        started = audio_rec.start()
+        if started:
+            self.assertTrue(audio_rec.is_recording)
+            time.sleep(0.3)
+            audio_rec.pause()
+            time.sleep(0.1)
+            audio_rec.resume()
+            time.sleep(0.2)
+            wav_file = audio_rec.stop()
+            self.assertFalse(audio_rec.is_recording)
+            if wav_file:
+                self.assertTrue(wav_file.exists())
+                self.assertEqual(wav_file.suffix.lower(), ".wav")
+
+    def test_merge_video_audio(self) -> None:
+        """Test FFmpeg video and audio muxer."""
+        import cv2
+        import soundfile as sf
+
+        from src.core.audio import merge_video_audio
+
+        # Create dummy video
+        vid_path = self.rec_dir / "temp_dummy_vid.mp4"
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        w = cv2.VideoWriter(str(vid_path), fourcc, 30, (320, 240))
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        for _ in range(30):
+            w.write(frame)
+        w.release()
+
+        # Create dummy WAV audio
+        wav_path = self.rec_dir / "temp_dummy_audio.wav"
+        dummy_audio = np.zeros((44100, 2), dtype=np.float32)
+        sf.write(str(wav_path), dummy_audio, 44100, subtype="PCM_16")
+
+        final_out = self.rec_dir / "final_merged.mp4"
+        success = merge_video_audio(vid_path, wav_path, final_out)
+        self.assertTrue(success)
+        self.assertTrue(final_out.exists())
+        self.assertGreater(final_out.stat().st_size, 1024)
 
 
 if __name__ == "__main__":

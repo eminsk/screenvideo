@@ -13,6 +13,7 @@ import cv2
 import mss
 import numpy as np
 
+from src.core.audio import AudioRecorder, merge_video_audio
 from src.core.config import AppConfig
 from src.core.cursor import CursorRenderer
 from src.core.monitors import Region
@@ -46,8 +47,10 @@ class ScreenRecorder:
 
         self._writer: cv2.VideoWriter | None = None
         self._current_file: Path | None = None
+        self._temp_video_file: Path | None = None
+        self._audio_recorder: AudioRecorder | None = None
         self._region: Region | None = None
-        self._monitor_index: int = 1
+        self._monitor_index: int = self._config.monitor_index
         self._sct: mss.mss | None = None
         self._cursor_renderer = CursorRenderer()
 
@@ -93,9 +96,10 @@ class ScreenRecorder:
     def current_file_size(self) -> int:
         """Current file size on disk in bytes."""
         with self._lock:
-            if self._current_file and self._current_file.exists():
+            target = self._temp_video_file or self._current_file
+            if target and target.exists():
                 try:
-                    return os.path.getsize(self._current_file)
+                    return os.path.getsize(target)
                 except OSError:
                     pass
         return 0
@@ -117,6 +121,26 @@ class ScreenRecorder:
                 return False
 
             self._current_file = self._generate_output_path()
+            timestamp_ms = int(time.time() * 1000)
+
+            # Audio setup
+            has_audio = (
+                self._config.record_system_audio or self._config.record_microphone
+            )
+            if has_audio:
+                self._temp_video_file = (
+                    self._config.recordings_dir / f"temp_vid_{timestamp_ms}.mp4"
+                )
+                self._audio_recorder = AudioRecorder(
+                    self._config.recordings_dir,
+                    record_system_audio=self._config.record_system_audio,
+                    record_microphone=self._config.record_microphone,
+                )
+                self._audio_recorder.start()
+            else:
+                self._temp_video_file = self._current_file
+                self._audio_recorder = None
+
             self._frame_count = 0
             self._fps_actual = float(self._config.fps)
             self._total_paused_duration = 0.0
@@ -136,6 +160,8 @@ class ScreenRecorder:
                 return False
             self._state = RecordingState.PAUSED
             self._pause_start_time = time.time()
+            if self._audio_recorder:
+                self._audio_recorder.pause()
             return True
 
     def resume(self) -> bool:
@@ -146,6 +172,8 @@ class ScreenRecorder:
             paused_delta = time.time() - self._pause_start_time
             self._total_paused_duration += paused_delta
             self._state = RecordingState.RECORDING
+            if self._audio_recorder:
+                self._audio_recorder.resume()
             return True
 
     def toggle_pause(self) -> bool:
@@ -160,17 +188,62 @@ class ScreenRecorder:
         return False
 
     def stop(self) -> Path | None:
-        """Stop recording, finalize video file and return its path."""
+        """Stop recording, finalize video and audio files and return path."""
         with self._lock:
             if self._state == RecordingState.IDLE:
                 return None
             self._state = RecordingState.IDLE
+            audio_rec = self._audio_recorder
+
+        # Stop audio recording and get temp WAV file
+        audio_file = audio_rec.stop() if audio_rec else None
 
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=3.5)
 
         with self._lock:
-            return self._current_file
+            temp_vid = self._temp_video_file
+            target_file = self._current_file
+            frames = self._frame_count
+
+            # Clean up empty or corrupted video files (0 frames or tiny header-only files)
+            if temp_vid and temp_vid.exists():
+                try:
+                    file_sz = os.path.getsize(temp_vid)
+                    if frames == 0 or file_sz <= 1024:
+                        temp_vid.unlink(missing_ok=True)
+                        if audio_file and audio_file.exists():
+                            audio_file.unlink(missing_ok=True)
+                        self._current_file = None
+                        self._temp_video_file = None
+                        return None
+                except OSError:
+                    pass
+
+            # Mux video and audio into final container
+            if temp_vid and temp_vid.exists() and target_file:
+                if audio_file and audio_file.exists():
+                    merge_video_audio(
+                        temp_vid,
+                        audio_file,
+                        target_file,
+                        audio_bitrate=self._config.audio_bitrate,
+                    )
+                elif temp_vid != target_file:
+                    try:
+                        if target_file.exists():
+                            target_file.unlink()
+                        temp_vid.replace(target_file)
+                    except Exception:
+                        pass
+
+            self._temp_video_file = None
+            self._audio_recorder = None
+
+            if target_file and target_file.exists() and target_file.stat().st_size > 1024:
+                return target_file
+
+            return None
 
     def _capture_loop(self) -> None:
         """Core streaming loop with timestamp pacing."""
@@ -183,7 +256,7 @@ class ScreenRecorder:
         with self._lock:
             region = self._region
             monitor_index = self._monitor_index
-            file_path = self._current_file
+            file_path = self._temp_video_file or self._current_file
             codec = self._config.codec
 
         if region and region.is_valid:
@@ -230,6 +303,29 @@ class ScreenRecorder:
         written_frames = 0
         loop_start_time = time.perf_counter()
 
+        # Capture initial frame immediately to ensure the file contains valid video data
+        try:
+            with self._lock:
+                should_capture = self._state == RecordingState.RECORDING
+
+            if should_capture:
+                raw_img = self._sct.grab(monitor)
+                frame = cv2.cvtColor(np.asarray(raw_img, dtype=np.uint8), cv2.COLOR_BGRA2BGR)
+                if self._config.record_cursor:
+                    self._cursor_renderer.render(
+                        frame,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        highlight=self._config.highlight_cursor,
+                    )
+                if self._writer and self._writer.isOpened():
+                    self._writer.write(frame)
+                    written_frames += 1
+                    with self._lock:
+                        self._frame_count = written_frames
+        except Exception as e:
+            print(f"[ScreenRecorder] Error writing initial frame: {e}")
+
         try:
             while True:
                 with self._lock:
@@ -258,7 +354,7 @@ class ScreenRecorder:
 
                 # Capture raw frame
                 raw_img = self._sct.grab(monitor)
-                frame = np.asarray(raw_img, dtype=np.uint8)[:, :, :3]
+                frame = cv2.cvtColor(np.asarray(raw_img, dtype=np.uint8), cv2.COLOR_BGRA2BGR)
 
                 # Draw mouse cursor if enabled
                 if self._config.record_cursor:

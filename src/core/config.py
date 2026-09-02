@@ -42,6 +42,11 @@ class AppConfig:
     # UI Theme
     theme: str = "darkly"
 
+    # Audio recording
+    record_system_audio: bool = True
+    record_microphone: bool = False
+    audio_bitrate: str = "192k"
+
     # Selected monitor index (1: Primary, 2..N: Secondary, 0: All)
     monitor_index: int = 1
 

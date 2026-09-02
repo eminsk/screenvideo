@@ -45,7 +45,7 @@ def capture_screenshot(
 
         raw_img = sct.grab(monitor)
         # Convert BGRA to BGR numpy array
-        frame = np.asarray(raw_img, dtype=np.uint8)[:, :, :3].copy()
+        frame = cv2.cvtColor(np.asarray(raw_img, dtype=np.uint8), cv2.COLOR_BGRA2BGR)
 
         if include_cursor:
             renderer = CursorRenderer()

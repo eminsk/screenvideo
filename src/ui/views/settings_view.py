@@ -128,7 +128,42 @@ class SettingsView(ttk.Frame):
         )
         self._combo_codec.grid(row=2, column=1, sticky="w", padx=10, pady=4)
 
-        # 3. Hotkeys Card
+        # 3. Audio Recording Card
+        card_audio = ttk.Labelframe(
+            scrollable_frame, text=" Настройки звука (Аудио) ", padding=12
+        )
+        card_audio.pack(fill=X, pady=(0, 10))
+
+        self._var_rec_sys_audio = ttk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            card_audio,
+            text="Записывать системный звук (динамики / наушники)",
+            variable=self._var_rec_sys_audio,
+            bootstyle="round-toggle",
+        ).pack(anchor="w", pady=2)
+
+        self._var_rec_mic = ttk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            card_audio,
+            text="Записывать звук с микрофона",
+            variable=self._var_rec_mic,
+            bootstyle="round-toggle",
+        ).pack(anchor="w", pady=2)
+
+        row_bitrate = ttk.Frame(card_audio)
+        row_bitrate.pack(fill=X, pady=(6, 2))
+        ttk.Label(row_bitrate, text="Битрейт аудио:", font=Fonts.BODY).pack(side=LEFT, padx=(0, 8))
+        self._var_audio_bitrate = ttk.StringVar(value="192k")
+        self._combo_audio_bitrate = ttk.Combobox(
+            row_bitrate,
+            textvariable=self._var_audio_bitrate,
+            values=["128k", "192k", "256k", "320k"],
+            state="readonly",
+            width=10,
+        )
+        self._combo_audio_bitrate.pack(side=LEFT)
+
+        # 4. Hotkeys Card
         card_keys = ttk.Labelframe(scrollable_frame, text=" Горячие клавиши ", padding=12)
         card_keys.pack(fill=X, pady=(0, 10))
 
@@ -228,6 +263,9 @@ class SettingsView(ttk.Frame):
         self._var_fps.set(str(cfg.fps))
         self._var_format.set(cfg.format)
         self._var_codec.set(cfg.codec)
+        self._var_rec_sys_audio.set(cfg.record_system_audio)
+        self._var_rec_mic.set(cfg.record_microphone)
+        self._var_audio_bitrate.set(cfg.audio_bitrate)
         self._var_k_start.set(cfg.hotkey_start)
         self._var_k_pause.set(cfg.hotkey_pause)
         self._var_k_stop.set(cfg.hotkey_stop)
@@ -272,6 +310,10 @@ class SettingsView(ttk.Frame):
 
         cfg.format = self._var_format.get()
         cfg.codec = self._var_codec.get()
+
+        cfg.record_system_audio = self._var_rec_sys_audio.get()
+        cfg.record_microphone = self._var_rec_mic.get()
+        cfg.audio_bitrate = self._var_audio_bitrate.get()
 
         cfg.hotkey_start = self._var_k_start.get().strip().lower()
         cfg.hotkey_pause = self._var_k_pause.get().strip().lower()

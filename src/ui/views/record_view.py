@@ -163,6 +163,26 @@ class RecordView(ttk.Frame):
         )
         chk_floating.grid(row=1, column=1, sticky="w", padx=8, pady=2)
 
+        self._var_sys_audio = ttk.BooleanVar(value=self._app.config.record_system_audio)
+        chk_sys_audio = ttk.Checkbutton(
+            opts_grid,
+            text="🔊 Звук системы (наушники/колонки)",
+            variable=self._var_sys_audio,
+            command=self._on_opt_changed,
+            bootstyle="round-toggle",
+        )
+        chk_sys_audio.grid(row=2, column=0, sticky="w", padx=8, pady=2)
+
+        self._var_mic = ttk.BooleanVar(value=self._app.config.record_microphone)
+        chk_mic = ttk.Checkbutton(
+            opts_grid,
+            text="🎤 Запись с микрофона",
+            variable=self._var_mic,
+            command=self._on_opt_changed,
+            bootstyle="round-toggle",
+        )
+        chk_mic.grid(row=2, column=1, sticky="w", padx=8, pady=2)
+
         # 4. Primary Action Controls Bar
         actions_row = ttk.Frame(self)
         actions_row.pack(fill=X, pady=(4, 6))
@@ -248,6 +268,8 @@ class RecordView(ttk.Frame):
         self._app.config.highlight_cursor = self._var_highlight.get()
         self._app.config.show_countdown = self._var_countdown.get()
         self._app.config.show_floating_bar = self._var_floating.get()
+        self._app.config.record_system_audio = self._var_sys_audio.get()
+        self._app.config.record_microphone = self._var_mic.get()
         self._app.config.save()
 
     def update_recording_state(self, state: RecordingState) -> None:

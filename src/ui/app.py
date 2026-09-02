@@ -55,8 +55,10 @@ class ScreenCaptureApp:
 
         self._hotkeys = HotkeyManager(dispatch_fn=lambda fn: self.root.after(0, fn))
 
-        # 4. Telemetry timer ID
+        # 4. Telemetry timer ID & transition state flags
         self._timer_after_id: str | None = None
+        self._is_starting: bool = False
+        self._countdown_overlay: CountdownOverlay | None = None
 
         # 5. Build Tabbed Interface
         self._notebook = ttk.Notebook(self.root, bootstyle="primary")
@@ -149,28 +151,41 @@ class ScreenCaptureApp:
 
     def start_recording(self) -> None:
         """Initiate recording sequence."""
-        if self.recorder.state != RecordingState.IDLE:
+        if self._is_starting or self.recorder.state != RecordingState.IDLE:
             return
+
+        self._is_starting = True
 
         if self.config.show_countdown:
             self.root.withdraw()
-            countdown = CountdownOverlay(
+            self._countdown_overlay = CountdownOverlay(
                 self.root,
                 seconds=self.config.countdown_seconds,
                 on_finish=self._actual_start_recording,
+                on_cancel=self._on_countdown_cancelled,
             )
-            countdown.start()
+            self._countdown_overlay.start()
         else:
             self._actual_start_recording()
 
+    def _on_countdown_cancelled(self) -> None:
+        """Handle user cancelling the pre-recording countdown."""
+        self._is_starting = False
+        self._countdown_overlay = None
+        self.restore_window()
+        self._status_var.set("Запуск записи отменён")
+
     def _actual_start_recording(self) -> None:
         """Start recording engine and update UI state."""
+        self._is_starting = False
+        self._countdown_overlay = None
+
         if self.config.sound_effects:
             play_sound_feedback("start")
 
         success = self.recorder.start()
         if not success:
-            self.root.deiconify()
+            self.restore_window()
             self._status_var.set("Не удалось запустить запись")
             return
 
@@ -206,6 +221,10 @@ class ScreenCaptureApp:
 
     def stop_recording(self) -> None:
         """Stop active recording session and finalize file."""
+        if self._is_starting and self._countdown_overlay:
+            self._countdown_overlay.cancel()
+            return
+
         if self.recorder.state == RecordingState.IDLE:
             return
 
@@ -228,7 +247,7 @@ class ScreenCaptureApp:
             file_sz = format_bytes(saved_file.stat().st_size)
             self._status_var.set(f"Видео сохранено: {saved_file.name} ({file_sz})")
         else:
-            self._status_var.set("Запись остановлена")
+            self._status_var.set("Запись остановлена (кадры не были записаны)")
 
     def take_instant_screenshot(self) -> None:
         """Capture screenshot immediately."""
@@ -277,6 +296,9 @@ class ScreenCaptureApp:
 
     def on_close(self) -> None:
         """Clean shutdown handler."""
+        if self._countdown_overlay:
+            self._countdown_overlay.cancel()
+
         if self.recorder.state != RecordingState.IDLE:
             self.recorder.stop()
 
