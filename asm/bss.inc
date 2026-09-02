@@ -190,6 +190,7 @@ section '.bss' readable writeable
   pipeSecAttr           SECURITY_ATTRIBUTES
   piFfmpegPipe          PROCESS_INFORMATION
   siFfmpegPipe          STARTUPINFO
+  hasFfmpeg             dd ?
 
   ; Wide String Buffers
   szCurrentRecFile      du 260 dup(?)

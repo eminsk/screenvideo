@@ -51,17 +51,24 @@ proc InitializeAppDirectories uses rbx rsi rdi
     invoke CloseHandle, rbx
 
 .audiocap_ready:
-    ; 6. Build absolute szFfmpegExe: "<szAppDir>ffmpeg.exe"
+    ; 6. Check for FFmpeg (App dir or PATH):
     invoke lstrcpyW, addr szFfmpegExe, addr szAppDir
     invoke lstrcatW, addr szFfmpegExe, addr szFfmpegName
-
-    ; Check if ffmpeg.exe exists in app directory
     invoke GetFileAttributesW, addr szFfmpegExe
     cmp eax, -1
-    jne .ffmpeg_ready
+    jne .ffmpeg_found
 
-    ; If not in app directory, check system PATH
-    invoke lstrcpyW, addr szFfmpegExe, addr szFfmpegName
+    ; Search PATH via SearchPathW
+    invoke SearchPathW, NULL, addr szFfmpegName, NULL, 260, addr szFfmpegExe, NULL
+    test eax, eax
+    jz .ffmpeg_not_found
+
+.ffmpeg_found:
+    mov [hasFfmpeg], 1
+    jmp .ffmpeg_ready
+
+.ffmpeg_not_found:
+    mov [hasFfmpeg], 0
 
 .ffmpeg_ready:
     ; 7. Build search masks for gallery
