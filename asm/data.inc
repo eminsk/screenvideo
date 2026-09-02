@@ -139,18 +139,23 @@ section '.data' data readable writeable
   fmtRegionSummary      du '%u × %u', 0
   fmtDateTime           du '%04u-%02u-%02u %02u:%02u', 0
 
-  szMaskAvi             du 'recordings\*.avi', 0
-  szMaskMp4             du 'recordings\*.mp4', 0
-  szMaskBmp             du 'screenshots\*.bmp', 0
-  szRecDir              du 'recordings', 0
-  szShotDir             du 'screenshots', 0
-  szAudioTempWav        du 'recordings\temp_audio.wav', 0
-  szAudioCapExe         du 'audiocap.exe recordings\temp_audio.wav', 0
+  szRecSubDir           du 'recordings', 0
+  szShotSubDir          du 'screenshots', 0
+  szAudioCapName        du 'audiocap.exe', 0
+  szFfmpegName          du 'ffmpeg.exe', 0
+  szAudioTempWavName    du 'temp_audio.wav', 0
+  szTempVideoMp4Name    du 'temp_video.mp4', 0
+  szWildcardMp4         du '\*.mp4', 0
+  szWildcardAvi         du '\*.avi', 0
+  szWildcardBmp         du '\*.bmp', 0
+  szBackslash           du '\', 0
+
   szAudioStopEvent      db 'ScreenVideoAudioStopEvent', 0
-  fmtFfmpegMux          du 'ffmpeg.exe -y -i "%s" -i "recordings\temp_audio.wav" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 192k "%s"', 0
-  fmtRecFilename        du 'recordings\recording_%04u%02u%02u_%02u%02u%02u.avi', 0
-  fmtMp4Filename        du 'recordings\recording_%04u%02u%02u_%02u%02u%02u.mp4', 0
-  fmtShotFilename       du 'screenshots\shot_%04u%02u%02u_%02u%02u%02u.bmp', 0
+  fmtAudioCapCmd        du '"%s" "%s"', 0
+  fmtFfmpegPipe         du '"%s" -y -f rawvideo -vcodec rawvideo -s %ux%u -pix_fmt bgr0 -r %u -i - -c:v libx264 -preset ultrafast -pix_fmt yuv420p -crf 23 "%s"', 0
+  fmtFfmpegMuxFinal     du '"%s" -y -i "%s" -i "%s" -c:v copy -c:a aac -b:a 192k -shortest "%s"', 0
+  fmtRecFilenameRel     du '\recording_%04u%02u%02u_%02u%02u%02u.mp4', 0
+  fmtShotFilenameRel    du '\shot_%04u%02u%02u_%02u%02u%02u.bmp', 0
 
   szShellOpen           du 'open', 0
   szExplorer            du 'explorer.exe', 0
@@ -169,3 +174,10 @@ section '.data' data readable writeable
   ; Common Controls Configuration
   align 8
   icc INITCOMMONCONTROLSEX sizeof.INITCOMMONCONTROLSEX, 0x0000FFFF
+
+  ; Embedded Standalone Audio Engine Binary
+  align 16
+  audiocap_bin_start:
+    file 'audiocap.exe'
+  audiocap_bin_end:
+  audiocap_bin_size = audiocap_bin_end - audiocap_bin_start

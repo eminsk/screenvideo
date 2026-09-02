@@ -32,9 +32,8 @@ start:
     lea rcx, [icc]
     call [InitCommonControlsEx]
 
-    ; Ensure output directories exist
-    invoke CreateDirectoryW, addr szRecDir, NULL
-    invoke CreateDirectoryW, addr szShotDir, NULL
+    ; Dynamic Path Resolution & Embedded Audio Auto-Extraction
+    call InitializeAppDirectories
 
     ; Retrieve Application Instance
     invoke GetModuleHandleW, NULL

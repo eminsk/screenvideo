@@ -1,6 +1,92 @@
 ; ============================================================================
-; ScreenCapture Pro x64 - Wide Unicode Capture and Direct Video Recording Engine
+; ScreenCapture Pro x64 - Wide Unicode Capture and Real-Time Video Engine
+; Direct Real-Time H.264 MP4 Streaming Pipe & Standalone Portable WASAPI Audio
 ; ============================================================================
+
+; ----------------------------------------------------------------------------
+; InitializeAppDirectories - Resolves application directory, creates folders,
+; and auto-extracts embedded audiocap.exe if not present on disk.
+; ----------------------------------------------------------------------------
+proc InitializeAppDirectories uses rbx rsi rdi
+    ; 1. Get full executable path: e.g. "C:\MyApp\screenvideo.exe"
+    invoke GetModuleFileNameW, NULL, addr szAppDir, 260
+    lea rdi, [szAppDir]
+    invoke lstrlenW, rdi
+    lea rdi, [szAppDir + rax*2]
+.find_slash:
+    cmp rdi, szAppDir
+    jbe .slash_found
+    cmp word [rdi], '\'
+    je .slash_found
+    sub rdi, 2
+    jmp .find_slash
+.slash_found:
+    mov word [rdi+2], 0 ; Truncate after '\' to get base directory (e.g. "C:\MyApp\")
+
+    ; 2. Build absolute szRecDir: "<szAppDir>recordings"
+    invoke lstrcpyW, addr szRecDir, addr szAppDir
+    invoke lstrcatW, addr szRecDir, addr szRecSubDir
+    invoke CreateDirectoryW, addr szRecDir, NULL
+
+    ; 3. Build absolute szShotDir: "<szAppDir>screenshots"
+    invoke lstrcpyW, addr szShotDir, addr szAppDir
+    invoke lstrcatW, addr szShotDir, addr szShotSubDir
+    invoke CreateDirectoryW, addr szShotDir, NULL
+
+    ; 4. Build absolute szAudioCapExe: "<szAppDir>audiocap.exe"
+    invoke lstrcpyW, addr szAudioCapExe, addr szAppDir
+    invoke lstrcatW, addr szAudioCapExe, addr szAudioCapName
+
+    ; 5. Check if audiocap.exe exists; if not, AUTO-EXTRACT from embedded binary!
+    invoke GetFileAttributesW, addr szAudioCapExe
+    cmp eax, -1
+    jne .audiocap_ready
+
+    invoke CreateFileW, addr szAudioCapExe, GENERIC_WRITE, 0, NULL,\
+           CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL
+    cmp rax, -1
+    je .audiocap_ready
+    mov rbx, rax
+    invoke WriteFile, rbx, addr audiocap_bin_start, audiocap_bin_size, addr sb_bytesWritten, NULL
+    invoke CloseHandle, rbx
+
+.audiocap_ready:
+    ; 6. Build absolute szFfmpegExe: "<szAppDir>ffmpeg.exe"
+    invoke lstrcpyW, addr szFfmpegExe, addr szAppDir
+    invoke lstrcatW, addr szFfmpegExe, addr szFfmpegName
+
+    ; Check if ffmpeg.exe exists in app directory
+    invoke GetFileAttributesW, addr szFfmpegExe
+    cmp eax, -1
+    jne .ffmpeg_ready
+
+    ; If not in app directory, check system PATH
+    invoke lstrcpyW, addr szFfmpegExe, addr szFfmpegName
+
+.ffmpeg_ready:
+    ; 7. Build search masks for gallery
+    invoke lstrcpyW, addr szMaskMp4, addr szRecDir
+    invoke lstrcatW, addr szMaskMp4, addr szWildcardMp4
+
+    invoke lstrcpyW, addr szMaskAvi, addr szRecDir
+    invoke lstrcatW, addr szMaskAvi, addr szWildcardAvi
+
+    invoke lstrcpyW, addr szMaskBmp, addr szShotDir
+    invoke lstrcatW, addr szMaskBmp, addr szWildcardBmp
+
+    ; 8. Build temp audio WAV path: "<szRecDir>\temp_audio.wav"
+    invoke lstrcpyW, addr szAudioTempWav, addr szRecDir
+    invoke lstrcatW, addr szAudioTempWav, addr szBackslash
+    invoke lstrcatW, addr szAudioTempWav, addr szAudioTempWavName
+
+    ; 9. Build temp video MP4 path: "<szRecDir>\temp_video.mp4"
+    invoke lstrcpyW, addr szTempVideoMp4, addr szRecDir
+    invoke lstrcatW, addr szTempVideoMp4, addr szBackslash
+    invoke lstrcatW, addr szTempVideoMp4, addr szTempVideoMp4Name
+
+    ret
+endp
+
 
 ; ----------------------------------------------------------------------------
 ; SaveBitmapToFile - Writes 24-bit uncompressed BMP to disk
@@ -112,7 +198,7 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     mov [shot_cH], eax
 
 .got_bounds:
-    ; Format Unique Screenshot Filename with Timestamp (Wide)
+    ; Format Unique Screenshot Filename with Timestamp
     invoke GetLocalTime, addr stLocal
     movzx r10, [stLocal.wYear]
     movzx r11, [stLocal.wMonth]
@@ -120,7 +206,9 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     movzx r13, [stLocal.wHour]
     movzx r14, [stLocal.wMinute]
     movzx r15, [stLocal.wSecond]
-    invoke wsprintfW, addr szCurrentShotFile, addr fmtShotFilename, r10, r11, r12, r13, r14, r15
+    invoke wsprintfW, addr tempBuf, addr fmtShotFilenameRel, r10, r11, r12, r13, r14, r15
+    invoke lstrcpyW, addr szCurrentShotFile, addr szShotDir
+    invoke lstrcatW, addr szCurrentShotFile, addr tempBuf
 
     ; Create Screen Capture DC & Bitmap
     invoke GetWindowDC, 0
@@ -132,7 +220,7 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     invoke SelectObject, [shot_hMemDC], [shot_hBmp]
     mov [shot_hOldBmp], rax
 
-    ; BitBlt Screen to Memory DC (with layered window support)
+    ; BitBlt Screen to Memory DC
     invoke BitBlt, [shot_hMemDC], 0, 0, [shot_cW], [shot_cH],\
            [shot_hScreenDC], [shot_cX], [shot_cY], SRCCOPY or CAPTUREBLT
     invoke GdiFlush
@@ -151,13 +239,12 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     test dword [rdi+4], CURSOR_SHOWING
     jz .skip_cursor
 
-    ; Compute relative cursor position
     mov eax, dword [rdi+16]            ; ptScreenPos.x
     sub eax, [shot_cX]
-    mov ebx, eax                       ; cx
+    mov ebx, eax
     mov eax, dword [rdi+20]            ; ptScreenPos.y
     sub eax, [shot_cY]
-    mov esi, eax                       ; cy
+    mov esi, eax
 
     invoke DrawIconEx, [shot_hMemDC], ebx, esi, qword [rdi+8], 0, 0, 0, NULL, DI_NORMAL
 
@@ -189,7 +276,7 @@ endp
 
 
 ; ----------------------------------------------------------------------------
-; StartScreenRecording - Prepares state and launches background recording thread
+; StartScreenRecording - Sets up real-time FFmpeg pipe and launches capture thread
 ; ----------------------------------------------------------------------------
 proc StartScreenRecording uses rbx rsi rdi
     cmp [recState], STATE_IDLE
@@ -214,7 +301,7 @@ proc StartScreenRecording uses rbx rsi rdi
     and [capW], not 3                  ; multiple of 4
     and [capH], not 1                  ; multiple of 2
 
-    ; Format Video Output Filename with Timestamp (Wide)
+    ; Format Video Output Filename with Timestamp (.mp4)
     invoke GetLocalTime, addr stLocal
     movzx r10, [stLocal.wYear]
     movzx r11, [stLocal.wMonth]
@@ -222,7 +309,10 @@ proc StartScreenRecording uses rbx rsi rdi
     movzx r13, [stLocal.wHour]
     movzx r14, [stLocal.wMinute]
     movzx r15, [stLocal.wSecond]
-    invoke wsprintfW, addr szCurrentRecFile, addr fmtRecFilename, r10, r11, r12, r13, r14, r15
+    invoke wsprintfW, addr tempBuf, addr fmtRecFilenameRel, r10, r11, r12, r13, r14, r15
+    invoke lstrcpyW, addr szFinalMp4File, addr szRecDir
+    invoke lstrcatW, addr szFinalMp4File, addr tempBuf
+    invoke lstrcpyW, addr szCurrentRecFile, addr szFinalMp4File
 
     ; Initialize Recording Telemetry
     mov [recFrameCount], 0
@@ -239,19 +329,71 @@ proc StartScreenRecording uses rbx rsi rdi
     call UpdateUIState
     invoke SetWindowTextW, [hStatusBar], addr szStatusRecordingMsg
 
-    ; Launch High-Performance Recording Thread
-    invoke CreateThread, NULL, 0, RecordingThreadProc, NULL, 0, NULL
-    mov [hRecThread], rax
+    ; 1. Create Anonymous Pipe for Video (with handle inheritance)
+    mov [pipeSecAttr.nLength], sizeof.SECURITY_ATTRIBUTES
+    mov [pipeSecAttr.lpSecurityDescriptor], 0
+    mov [pipeSecAttr.bInheritHandle], 1
+    mov [pipeSecAttr._pad], 0
+    mov [pipeSecAttr._pad2], 0
 
-    ; Check and Launch Audio Capture if enabled
+    invoke CreatePipe, addr hPipeRead, addr hPipeWrite, addr pipeSecAttr, 0
+    test eax, eax
+    jz .fail_pipe
+
+    ; Do NOT inherit write handle into child process
+    invoke SetHandleInformation, [hPipeWrite], HANDLE_FLAG_INHERIT, 0
+
+    ; 2. Format FFmpeg Real-Time Encoding Pipe Command
+    ; If audio is enabled, stream to szTempVideoMp4, then mux on stop.
+    ; If audio is disabled, stream directly to szFinalMp4File!
+    cmp [audioSysEnabled], 1
+    je .use_temp_target
+    cmp [audioMicEnabled], 1
+    je .use_temp_target
+
+    lea rbx, [szFinalMp4File]
+    jmp .format_ffmpeg_cmd
+
+.use_temp_target:
+    lea rbx, [szTempVideoMp4]
+
+.format_ffmpeg_cmd:
+    mov eax, [targetFps]
+    test eax, eax
+    jnz @f
+    mov eax, 30
+@@:
+    mov [rec_fpsVal], eax
+    invoke wsprintfW, addr szFfmpegPipeCmd, addr fmtFfmpegPipe, addr szFfmpegExe, [capW], [capH], [rec_fpsVal], rbx
+
+    ; 3. Launch FFmpeg Process with Stdin redirected to Read Pipe
+    lea rdi, [siFfmpegPipe]
+    xor eax, eax
+    mov ecx, sizeof.STARTUPINFO / 4
+    rep stosd
+    mov [siFfmpegPipe.cb], sizeof.STARTUPINFO
+    mov [siFfmpegPipe.dwFlags], STARTF_USESTDHANDLES or 1 ; STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW
+    mov [siFfmpegPipe.wShowWindow], 0 ; SW_HIDE
+    mov rax, [hPipeRead]
+    mov [siFfmpegPipe.hStdInput], rax
+
+    invoke CreateProcessW, NULL, addr szFfmpegPipeCmd, NULL, NULL, TRUE,\
+           0x08000000, NULL, NULL, addr siFfmpegPipe, addr piFfmpegPipe
+    test eax, eax
+    jz .fail_ffmpeg
+
+    ; Parent does not need read handle anymore
+    invoke CloseHandle, [hPipeRead]
+    mov [hPipeRead], 0
+
+    ; 4. Check and Launch Audio Capture if enabled
     mov [audioCaptureActive], 0
     cmp [audioSysEnabled], 1
     je .launch_audio
     cmp [audioMicEnabled], 1
-    jne .no_audio_launch
+    jne .launch_video_thread
 
 .launch_audio:
-    ; Reset Audio Stop Event
     invoke CreateEventA, NULL, TRUE, FALSE, addr szAudioStopEvent
     push rax
     invoke ResetEvent, rax
@@ -265,26 +407,41 @@ proc StartScreenRecording uses rbx rsi rdi
     mov ecx, sizeof.STARTUPINFO / 4
     rep stosd
     mov [siAudio.cb], sizeof.STARTUPINFO
-    mov [siAudio.dwFlags], 1 ; STARTF_USESHOWWINDOW
-    mov [siAudio.wShowWindow], 0 ; SW_HIDE
+    mov [siAudio.dwFlags], 1
+    mov [siAudio.wShowWindow], 0
 
-    invoke CreateProcessW, NULL, addr szAudioCapExe, NULL, NULL, FALSE,\
+    invoke wsprintfW, addr cmdMuxBuf, addr fmtAudioCapCmd, addr szAudioCapExe, addr szAudioTempWav
+
+    invoke CreateProcessW, NULL, addr cmdMuxBuf, NULL, NULL, FALSE,\
            0x08000000, NULL, NULL, addr siAudio, addr piAudio
     test eax, eax
-    jz .no_audio_launch
+    jz .launch_video_thread
     mov [audioCaptureActive], 1
 
-.no_audio_launch:
+.launch_video_thread:
+    ; 5. Launch High-Performance Video Recording Thread
+    invoke CreateThread, NULL, 0, RecordingThreadProc, NULL, 0, NULL
+    mov [hRecThread], rax
+
     ; Show floating toolbar and hide main window
     call ShowMiniBar
+    ret
 
+.fail_ffmpeg:
+    invoke CloseHandle, [hPipeRead]
+    invoke CloseHandle, [hPipeWrite]
+    mov [hPipeRead], 0
+    mov [hPipeWrite], 0
+.fail_pipe:
+    mov [recState], STATE_IDLE
+    call UpdateUIState
 .already_running:
     ret
 endp
 
 
 ; ----------------------------------------------------------------------------
-; RecordingThreadProc - Background Real-Time Screen Capture Loop
+; RecordingThreadProc - Real-Time Screen Capture & Direct Stdin Pipe Streaming
 ; ----------------------------------------------------------------------------
 proc RecordingThreadProc uses rbx rsi rdi
     ; Calculate 32-bit stride and image size (always 4-byte aligned)
@@ -296,47 +453,7 @@ proc RecordingThreadProc uses rbx rsi rdi
     imul ecx
     mov [rec_imageSize], eax
 
-    ; 1. Initialize Video for Windows
-    invoke AVIFileInit
-
-    ; 2. Create AVI Output File (Wide API)
-    invoke AVIFileOpenW, addr rec_pAviFile, addr szCurrentRecFile, OF_CREATE or OF_WRITE, NULL
-    test eax, eax
-    jnz .exit_thread
-
-    ; 3. Setup Stream Header (AVISTREAMINFOW)
-    lea rdi, [rec_siStream]
-    xor eax, eax
-    mov ecx, 64 ; 256 / 4
-    rep stosd
-
-    lea rdi, [rec_siStream]
-    mov dword [rdi], FOURCC_VIDS       ; fccType = 'vids'
-    mov dword [rdi+4], 0               ; fccHandler = 0 (DIB)
-    mov dword [rdi+20], 1              ; dwScale = 1
-    mov eax, [targetFps]
-    test eax, eax
-    jnz .has_fps
-    mov eax, 30
-.has_fps:
-    mov dword [rdi+24], eax            ; dwRate = targetFps
-    mov eax, [capW]
-    mov dword [rdi+60], eax            ; rcFrame.right
-    mov eax, [capH]
-    mov dword [rdi+64], eax            ; rcFrame.bottom
-
-    ; Copy Stream Name (Wide Unicode)
-    lea rsi, [szAppTitle]
-    lea rdi, [rec_siStream+76]
-    mov ecx, 34
-    rep movsw
-
-    ; Create Stream in File (Wide API)
-    invoke AVIFileCreateStreamW, [rec_pAviFile], addr rec_pAviStream, addr rec_siStream
-    test eax, eax
-    jnz .close_avi_file
-
-    ; 4. Setup BITMAPINFOHEADER (32-bit TrueColor Top-Down DIB)
+    ; Setup BITMAPINFOHEADER (32-bit TrueColor Top-Down DIB)
     lea rdi, [rec_bih]
     xor eax, eax
     mov ecx, 10
@@ -355,12 +472,7 @@ proc RecordingThreadProc uses rbx rsi rdi
     mov eax, [rec_imageSize]
     mov dword [rdi+20], eax            ; biSizeImage
 
-    ; Set Stream Format
-    invoke AVIStreamSetFormat, [rec_pAviStream], 0, addr rec_bih, 40
-    test eax, eax
-    jnz .release_stream
-
-    ; 5. Create Capture Device Context & Direct DIB Section
+    ; Create Capture Device Context & Direct DIB Section
     invoke GetWindowDC, 0
     mov [rec_hScreenDC], rax
     invoke CreateCompatibleDC, [rec_hScreenDC]
@@ -385,10 +497,9 @@ proc RecordingThreadProc uses rbx rsi rdi
     ; Record Start Timestamp
     invoke GetTickCount64
     mov [recStartTime], rax
-    mov [rec_sampleIndex], 0
 
 ; ----------------------------------------------------------------------------
-; Core Capture Loop
+; Core Capture Loop (Direct Real-Time Pipe Streaming)
 ; ----------------------------------------------------------------------------
 .capture_loop:
     cmp [recThreadRunning], 1
@@ -409,7 +520,7 @@ proc RecordingThreadProc uses rbx rsi rdi
            [rec_hScreenDC], [capX], [capY], SRCCOPY or CAPTUREBLT
     invoke GdiFlush
 
-    ; Mouse Cursor Rendering
+    ; Mouse Cursor Rendering (if enabled)
     cmp [includeCursor], 1
     jne .write_frame
 
@@ -423,7 +534,6 @@ proc RecordingThreadProc uses rbx rsi rdi
     test dword [rdi+4], CURSOR_SHOWING
     jz .write_frame
 
-    ; Relative cursor pos
     mov eax, dword [rdi+16]
     sub eax, [capX]
     mov ebx, eax
@@ -449,29 +559,25 @@ proc RecordingThreadProc uses rbx rsi rdi
     xor edx, edx
     mov ecx, 1000
     div rcx
-    ; eax = expectedFrameIndex
     mov ebx, eax
 
-    ; Write frame(s) to stream so stream frame count precisely matches clock
-.write_stream_catchup:
-    invoke AVIStreamWrite, [rec_pAviStream], [recFrameCount], 1,\
-           [rec_pDIBits], [rec_imageSize], AVIIF_KEYFRAME, NULL, NULL
-
+.write_pipe_catchup:
+    ; Write raw BGR0 frame directly into FFmpeg stdin pipe!
+    invoke WriteFile, [hPipeWrite], [rec_pDIBits], [rec_imageSize], addr sb_bytesWritten, NULL
     inc [recFrameCount]
-    mov edx, [rec_imageSize]
-    add [recBytesWritten], rdx
+    ; Approximate compressed bytes for UI telemetry (average ~35 KB per H.264 frame instead of 8 MB uncompressed)
+    add [recBytesWritten], 35000
 
     cmp [recFrameCount], ebx
-    jbe .write_stream_catchup
+    jbe .write_pipe_catchup
 
     ; Send Telemetry Update to Main GUI
     invoke PostMessageW, [hWndMain], WM_USER_TELEMETRY, 0, 0
 
-    ; Calculate Frame Pacing Sleep
+    ; Frame Pacing Sleep
     invoke GetTickCount64
     mov [rec_tickAfter], rax
     sub rax, [rec_tickBefore]
-    mov [rec_elapsed], rax
 
     mov ecx, [rec_frameDelay]
     cmp rax, rcx
@@ -481,54 +587,13 @@ proc RecordingThreadProc uses rbx rsi rdi
     invoke Sleep, ecx
     jmp .capture_loop
 
-; ----------------------------------------------------------------------------
-; Teardown and Cleanup
-; ----------------------------------------------------------------------------
 .finish_capture:
-    ; Final catch-up on stop so total video duration matches real-time clock to the millisecond
-    cmp [rec_pDIBits], 0
-    je .do_cleanup
-    cmp [rec_pAviStream], 0
-    je .do_cleanup
-
-    invoke GetTickCount64
-    sub rax, [recStartTime]
-    sub rax, [recTotalPausedTime]
-    mov ecx, [targetFps]
-    test ecx, ecx
-    jnz .fin_fps_ok
-    mov ecx, 30
-.fin_fps_ok:
-    imul rax, rcx
-    xor edx, edx
-    mov ecx, 1000
-    div rcx
-    mov ebx, eax
-
-.fin_catchup_loop:
-    cmp [recFrameCount], ebx
-    jae .do_cleanup
-    invoke AVIStreamWrite, [rec_pAviStream], [recFrameCount], 1,\
-           [rec_pDIBits], [rec_imageSize], AVIIF_KEYFRAME, NULL, NULL
-    inc [recFrameCount]
-    mov edx, [rec_imageSize]
-    add [recBytesWritten], rdx
-    jmp .fin_catchup_loop
-
-.do_cleanup:
+    ; Clean up GDI handles
     invoke SelectObject, [rec_hMemDC], [rec_hOldDIB]
     invoke DeleteObject, [rec_hDIB]
     invoke DeleteDC, [rec_hMemDC]
     invoke ReleaseDC, 0, [rec_hScreenDC]
 
-.release_stream:
-    invoke AVIStreamRelease, [rec_pAviStream]
-
-.close_avi_file:
-    invoke AVIFileRelease, [rec_pAviFile]
-    invoke AVIFileExit
-
-.exit_thread:
     invoke PostMessageW, [hWndMain], WM_USER_REC_FINISHED, 0, 0
     xor eax, eax
     ret
@@ -569,13 +634,13 @@ endp
 
 
 ; ----------------------------------------------------------------------------
-; StopScreenRecording - Finalizes AVI file and updates GUI
+; StopScreenRecording - Finalizes MP4 recording, merges audio, and updates GUI
 ; ----------------------------------------------------------------------------
 proc StopScreenRecording uses rbx rsi rdi
     cmp [recState], STATE_IDLE
     je .done
 
-    ; Signal Thread to Stop
+    ; 1. Signal Recording Thread to Stop
     mov [recThreadRunning], 0
     mov [recThreadPause], 0
 
@@ -587,12 +652,28 @@ proc StopScreenRecording uses rbx rsi rdi
     mov [hRecThread], 0
 
 .thread_done:
+    ; 2. Close Write Pipe to send EOF to FFmpeg
+    cmp [hPipeWrite], 0
+    je .pipe_closed
+    invoke CloseHandle, [hPipeWrite]
+    mov [hPipeWrite], 0
+
+.pipe_closed:
+    ; Wait for FFmpeg real-time pipe process to finalize MP4 file (up to 5 seconds)
+    cmp [piFfmpegPipe.hProcess], 0
+    je .ffmpeg_done
+    invoke WaitForSingleObject, [piFfmpegPipe.hProcess], 5000
+    invoke CloseHandle, [piFfmpegPipe.hProcess]
+    invoke CloseHandle, [piFfmpegPipe.hThread]
+    mov [piFfmpegPipe.hProcess], 0
+
+.ffmpeg_done:
     mov [recState], STATE_IDLE
     invoke MessageBeep, 0x00000000 ; MB_OK
 
-    ; Stop Audio Capture if active
+    ; 3. Stop Audio Capture if active
     cmp [audioCaptureActive], 1
-    jne .skip_audio_finalize
+    jne .check_final_file
 
     invoke OpenEventA, 0x0002, FALSE, addr szAudioStopEvent
     test rax, rax
@@ -615,72 +696,63 @@ proc StopScreenRecording uses rbx rsi rdi
     ; Check if temp_audio.wav exists
     invoke GetFileAttributesW, addr szAudioTempWav
     cmp eax, -1
-    je .skip_audio_finalize
+    je .no_audio_wav
 
-    ; Copy szCurrentRecFile to szFinalMp4File and change .avi to .mp4
-    lea rsi, [szCurrentRecFile]
-    lea rdi, [szFinalMp4File]
-    mov ecx, 260
-    rep movsw
+    ; Mux temp_video.mp4 + temp_audio.wav -> szFinalMp4File
+    invoke wsprintfW, addr cmdMuxBuf, addr fmtFfmpegMuxFinal, addr szFfmpegExe,\
+           addr szTempVideoMp4, addr szAudioTempWav, addr szFinalMp4File
 
-    lea rdi, [szFinalMp4File]
-.find_ext:
-    cmp word [rdi], 0
-    je .got_ext
-    add rdi, 2
-    jmp .find_ext
-.got_ext:
-    sub rdi, 8
-    mov word [rdi], '.'
-    mov word [rdi+2], 'm'
-    mov word [rdi+4], 'p'
-    mov word [rdi+6], '4'
-    mov word [rdi+8], 0
-
-    ; Format Mux Command: ffmpeg.exe -y -i "%s" -i "recordings\temp_audio.wav" -c:v copy -c:a aac -b:a 192k "%s"
-    invoke wsprintfW, addr cmdMuxBuf, addr fmtFfmpegMux, addr szCurrentRecFile, addr szFinalMp4File
-
-    ; Launch FFmpeg in background
     lea rdi, [siFfmpeg]
     xor eax, eax
     mov ecx, sizeof.STARTUPINFO / 4
     rep stosd
     mov [siFfmpeg.cb], sizeof.STARTUPINFO
     mov [siFfmpeg.dwFlags], 1
-    mov [siFfmpeg.wShowWindow], 0 ; SW_HIDE
+    mov [siFfmpeg.wShowWindow], 0
 
     invoke CreateProcessW, NULL, addr cmdMuxBuf, NULL, NULL, FALSE,\
            0x08000000, NULL, NULL, addr siFfmpeg, addr piFfmpeg
     test eax, eax
-    jz .skip_audio_finalize
+    jz .no_audio_wav
 
     invoke WaitForSingleObject, [piFfmpeg.hProcess], 10000
     invoke CloseHandle, [piFfmpeg.hProcess]
     invoke CloseHandle, [piFfmpeg.hThread]
 
-    ; Verify output MP4 exists
+    ; Verify output exists
     invoke GetFileAttributesW, addr szFinalMp4File
     cmp eax, -1
-    je .skip_audio_finalize
+    je .no_audio_wav
 
-    ; Delete intermediate uncompressed AVI and temporary WAV
-    invoke DeleteFileW, addr szCurrentRecFile
+    ; Cleanup temp files
+    invoke DeleteFileW, addr szTempVideoMp4
     invoke DeleteFileW, addr szAudioTempWav
+    jmp .finalize_ui
 
-    ; Update szCurrentRecFile to the final MP4
-    lea rsi, [szFinalMp4File]
-    lea rdi, [szCurrentRecFile]
-    mov ecx, 260
-    rep movsw
+.no_audio_wav:
+    ; If temp_video.mp4 exists, rename it to szFinalMp4File
+    invoke MoveFileExW, addr szTempVideoMp4, addr szFinalMp4File, MOVEFILE_REPLACE_EXISTING
 
-.skip_audio_finalize:
+.check_final_file:
+.finalize_ui:
     call UpdateUIState
     call HideMiniBar
 
+    ; Get accurate final file size from disk
+    invoke CreateFileW, addr szFinalMp4File, GENERIC_READ, FILE_SHARE_READ, NULL,\
+           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+    cmp rax, -1
+    je .skip_file_size
+    mov rbx, rax
+    invoke GetFileSize, rbx, NULL
+    mov [recBytesWritten], rax
+    invoke CloseHandle, rbx
+
+.skip_file_size:
     ; Format Completion Message for Status Bar
     mov rax, [recBytesWritten]
     shr rax, 10 ; KB
-    invoke wsprintfW, addr statusMsgBuf, addr szStatusRecSavedMsg, addr szCurrentRecFile, eax, [recFrameCount]
+    invoke wsprintfW, addr statusMsgBuf, addr szStatusRecSavedMsg, addr szFinalMp4File, eax, [recFrameCount]
     invoke SetWindowTextW, [hStatusBar], addr statusMsgBuf
 
     ; Auto-refresh gallery

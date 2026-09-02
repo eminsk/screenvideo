@@ -171,6 +171,26 @@ section '.bss' readable writeable
   wcMiniBar             WNDCLASSEX
   miniTimerBuf          du 32 dup(?)
 
+  ; Dynamic Application Paths (Absolute, relocatable anywhere)
+  szAppDir              du 260 dup(?)
+  szRecDir              du 260 dup(?)
+  szShotDir             du 260 dup(?)
+  szAudioCapExe         du 260 dup(?)
+  szFfmpegExe           du 260 dup(?)
+  szAudioTempWav        du 260 dup(?)
+  szTempVideoMp4        du 260 dup(?)
+  szMaskMp4             du 260 dup(?)
+  szMaskAvi             du 260 dup(?)
+  szMaskBmp             du 260 dup(?)
+  szFfmpegPipeCmd       du 1024 dup(?)
+
+  ; Real-Time Video Pipe Handles & Structures
+  hPipeRead             dq ?
+  hPipeWrite            dq ?
+  pipeSecAttr           SECURITY_ATTRIBUTES
+  piFfmpegPipe          PROCESS_INFORMATION
+  siFfmpegPipe          STARTUPINFO
+
   ; Wide String Buffers
   szCurrentRecFile      du 260 dup(?)
   szCurrentShotFile     du 260 dup(?)
@@ -240,6 +260,7 @@ section '.bss' readable writeable
   rec_siStream          db 256 dup(?)
   rec_ci                db 24 dup(?)
   rec_frameDelay        dd ?
+  rec_fpsVal            dd ?
   rec_tickBefore        dq ?
   rec_tickAfter         dq ?
   rec_elapsed           dq ?

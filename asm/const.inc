@@ -278,3 +278,15 @@ struct LVITEMW
   iGroup      dd ?
   _pad3       dd ?
 ends
+
+HANDLE_FLAG_INHERIT         = 0x00000001
+STARTF_USESTDHANDLES        = 0x00000100
+MOVEFILE_REPLACE_EXISTING   = 0x00000001
+
+struct SECURITY_ATTRIBUTES
+  nLength              dd ?
+  _pad                 dd ?
+  lpSecurityDescriptor dq ?
+  bInheritHandle       dd ?
+  _pad2                dd ?
+ends
