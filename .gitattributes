@@ -1,0 +1,2 @@
+﻿# Mark external FASM Windows SDK headers as vendored so GitHub Linguist detects Python as primary language
+asm/INCLUDE/** linguist-vendored
