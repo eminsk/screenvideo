@@ -1,2 +1,5 @@
-﻿# Mark external FASM Windows SDK headers as vendored so GitHub Linguist detects Python as primary language
+﻿# Mark external FASM Windows SDK headers as vendored so GitHub Linguist does not count them
 asm/INCLUDE/** linguist-vendored
+
+# Disambiguate .inc files as Assembly (otherwise Linguist guesses PHP/Pawn/BitBake)
+*.inc linguist-language=Assembly
