@@ -1,113 +1,120 @@
-# ScreenCapture Pro v2.0 (x64 Native Assembly Edition)
+# ⚡ ScreenCapture Pro v2.0 (x64 Native Assembly Edition)
 
-Профессиональное высокопроизводительное приложение для записи экрана, захвата выделенной области и создания мгновенных снимков экрана с нулевой нагрузкой на процессор, написанное на чистом **Flat Assembler (FASM x64)** для 64-битных операционных систем Windows (10 / 11).
+[![Architecture: x64](https://img.shields.io/badge/Architecture-x86__64-3776AB.svg)](https://en.wikipedia.org/wiki/X86-64)
+[![Assembler: FASM](https://img.shields.io/badge/Assembler-Flat%20Assembler%201.73-E91E63.svg)](https://flatassembler.net/)
+[![Binary Size](https://img.shields.io/badge/Binary%20Size-~37%20KB-4CAF50.svg)](#)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6.svg?logo=windows&logoColor=white)](https://microsoft.com/windows)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
-Разработано на основе глубокого анализа эталонных библиотек и архитектурных соглашений FASM из `C:\asm\hdd` и полного функционала проекта `ScreenCapture Pro` из `C:\proekts\screenvideo`.
+A professional, high-performance screen recorder, interactive region selector, and instant screenshot suite engineered with near-zero CPU and memory overhead, written in **pure 64-bit Flat Assembler (FASM x64)** for Windows 10 and 11.
 
----
-
-## ⚡ Ключевые преимущества и особенности
-
-- **Экстремальная легковесность**: Размер исполняемого файла всего **37 КБ** (37 888 байт)! Никаких тяжёлых фреймворков, Electron, Python runtime или сторонних DLL.
-- **Чистый 64-битный код (x64 ABI)**: Прямое взаимодействие с Windows API (`KERNEL32`, `USER32`, `GDI32`, `COMCTL32`, `SHELL32`, `AVIFIL32`, `DWMAPI`, `UXTHEME`).
-- **Премиальный тёмный дизайн (Modern Dark Mode & Custom Owner-Draw)**:
-  - Полное соответствие оригинальному Python-приложению: фон `#1E1E1E`, карточки `#252526` со скруглёнными углами (`RoundRect`) и тонкими рамками `#383E47`.
-  - Тёмная системная полоса заголовка Windows 10/11 через DWM API (`DwmSetWindowAttribute`).
-  - Кастомные цветные скруглённые кнопки: Старт (изумрудный `#00BC7D`), Снимок (океанический синий `#0284C7`), Пауза (янтарный `#F59E0B`), Стоп (красный `#EF4444`), Удалить (тёмная с красным контуром).
-  - Тёмный сегментный переключатель вкладок с активным неоновым подчёркиванием.
-  - Качественная типографика Segoe UI и Consolas 32pt для цифрового таймера.
-- **100% честный Wide Unicode без кракозябр**: Нативная поддержка кириллицы через встроенный макрос `INCLUDE\ENCODING\UTF8.INC` и функции Win32 `W` API (`CreateWindowExW`, `DrawTextW`, `SetWindowTextW`, `FindFirstFileW`, `CreateFileW`).
-- **Интерактивный инструмент выделения области (Snipping Tool Overlay)**:
-  - Полноэкранный полупрозрачный оверлей с курсором-перекрестием (`IDC_CROSS`).
-  - Плавное выделение прямоугольной области рамкой (`DrawFocusRect`).
-  - Быстрая отмена клавишей `ESC` или правым кликом мыши.
-- **Глобальные горячие клавиши (Global System Hotkeys)**:
-  - `F5` — Начать запись экрана.
-  - `F6` — Приостановить / возобновить запись (Пауза).
-  - `F10` — Остановить запись и сохранить файл.
-  - `F11` — Сделать мгновенный снимок экрана или выделенной области.
-- **Встроенный менеджер Галереи**:
-  - Таблица записей (`SysListView32`) с сортировкой и отображением имени файла, типа, читаемого размера (KB / MB) и даты создания.
-  - Кнопки: «Открыть файл», «Открыть в проводнике» с выделением файла (`/select`), «Обновить список», «Удалить файл».
-- **Захват курсора мыши**: Точное позиционирование и наложение курсора (`GetCursorInfo`, `DrawIconEx`) на скриншоты и кадры видеопотока.
-- **Встроенные ресурсы**: Иконка приложения (ID 1) и XML-манифест Common Controls 6.0 вшиты прямо в секцию `.rsrc` PE-файла.
+Designed as a bare-metal native counterpart to the Python edition of `ScreenCapture Pro`, achieving microsecond responsiveness and complete independence from heavy runtimes.
 
 ---
 
-## 📂 Структура проекта
+## ⚡ Key Highlights
+
+- **Ultra-Lightweight Footprint**: Standalone executable size of only **~37 KB** (37,888 bytes). Zero external dependencies, no Python runtime, no Electron bloat, and no third-party runtime DLLs.
+- **Pure 64-Bit x64 ABI**: Direct low-level integration with Windows system APIs (`KERNEL32`, `USER32`, `GDI32`, `COMCTL32`, `SHELL32`, `AVIFIL32`, `DWMAPI`, `UXTHEME`).
+- **Custom Owner-Draw Modern Dark UI**:
+  - Pixel-perfect match with the Python edition: `#1E1E1E` background, `#252526` rounded cards with `#383E47` borders (`RoundRect`).
+  - Native Windows 10/11 dark titlebar integration via DWM API (`DwmSetWindowAttribute`).
+  - Custom colored owner-draw rounded buttons: Start (Emerald `#00BC7D`), Snapshot (Ocean Blue `#0284C7`), Pause (Amber `#F59E0B`), Stop (Crimson `#EF4444`).
+  - Dark segmented tab switcher with active neon indicator.
+  - High-precision digital timer rendered in Consolas 32pt.
+- **100% Native Wide Unicode (UTF-16)**: Full international character support via `INCLUDE\ENCODING\UTF8.INC` and Win32 `W` APIs (`CreateWindowExW`, `DrawTextW`, `SetWindowTextW`, `FindFirstFileW`, `CreateFileW`).
+- **Interactive Snipping Tool Overlay**:
+  - Fullscreen translucent sniper overlay with crosshair cursor (`IDC_CROSS`).
+  - Smooth rectangular region focus framing (`DrawFocusRect`).
+  - Instant cancellation with `ESC` or right mouse click.
+- **Global Low-Level Hotkeys**:
+  - `F5` — Start screen recording.
+  - `F6` — Pause / Resume recording.
+  - `F10` — Stop recording and finalize file headers.
+  - `F11` — Instant fullscreen or region screenshot.
+- **Built-in Media Gallery & Catalog**:
+  - Native list view table (`SysListView32`) with sorting, file types, human-readable sizes (KB / MB), and creation timestamps.
+  - Actions: Open File, Reveal in Explorer with selection (`/select`), Refresh, Delete.
+- **Hardware Cursor Capture**: High-precision cursor position tracking and icon blitting (`GetCursorInfo`, `DrawIconEx`) on screenshots and video stream frames.
+- **Embedded Resources**: Hi-DPI application icon (ID 1) and Common Controls 6.0 XML manifest compiled directly into the PE `.rsrc` section.
+
+---
+
+## 📂 Architecture & File Structure
 
 ```
-C:\proekts\screenvideo\asm\
-│
-├── screenvideo.asm          # Главный модуль: точка входа start, класс окна, цикл сообщений,
-│                            # регистрация горячих клавиш, MainWndProc, секция импортов и ресурсов (.rsrc)
-│
-├── const.inc                # Константы идентификаторов контролов, цветов, горячих клавиш,
-│                            # кодов сообщений и структур (TCITEM, LVCOLUMN, LVITEM, CURSORINFO)
-│
-├── data.inc                 # Инициализированные строковые ресурсы (заголовки, форматы, пути, подсказки),
-│                            # структура INITCOMMONCONTROLSEX и классы окон
-│
-├── bss.inc                  # Неинициализированные переменные: дескрипторы окон и шрифтов, геометрия захвата,
-│                            # телеметрия, статические буферы и структуры данных API
-│
-├── ui.inc                   # Построение интерфейса: создание шрифтов, кистей, контролов вкладок,
-│                            # переключатель страниц (SwitchTab), обновление состояний кнопок
-│
-├── capture.inc              # Ядро захвата: фоновый поток видеозаписи (RecordingThreadProc),
-│                            # создание AVI через AVIFIL32, сохранение 24-битных BMP, отрисовка курсора
-│
-├── region.inc               # Инструмент интерактивного выделения области экрана (Snipping Tool Overlay)
-│
-├── gallery.inc              # Сканирование папок recordings и screenshots, форматирование даты и размера,
-│                            # заполнение таблицы SysListView32, открытие и удаление файлов
-│
-├── manifest.xml             # XML-манифест: Common Controls v6.0 + Per-Monitor V2 DPI Awareness
-├── icon.ico                 # Иконка приложения высокого разрешения
-├── FASM.EXE                 # Компилятор Flat Assembler v1.73.35 (x64)
-├── build.bat                # Скрипт сборки в один клик и запуска
-└── INCLUDE\                 # Автономный набор 64-битных заголовочных файлов FASM (API, EQUATES, MACRO)
+screenvideo/asm/
+├── screenvideo.asm          # Entry point (start), window class, message loop,
+│                            # hotkey dispatch, MainWndProc, imports & .rsrc section
+├── const.inc                # Control IDs, color tokens, hotkey constants,
+│                            # window messages and struct layouts (TCITEM, LVCOLUMN, LVITEM)
+├── data.inc                 # Initialized string literals, formats, paths, UI classes
+├── bss.inc                  # Uninitialized handles (HWND, HFONT, HDC), telemetry, buffers
+├── ui.inc                   # Owner-draw UI rendering, fonts, brushes, tab controller
+├── capture.inc              # Capture engine: background worker thread (RecordingThreadProc),
+│                            # AVI stream creation via AVIFIL32, 24-bit BMP saver, cursor blitting
+├── region.inc               # Interactive region snipping tool overlay & geometry math
+├── gallery.inc              # Directory scanning for recordings/screenshots, SysListView32 binding
+├── manifest.xml             # Common Controls v6.0 & Per-Monitor V2 DPI awareness manifest
+├── icon.ico                 # High-resolution application icon
+├── FASM.EXE                 # Flat Assembler compiler v1.73.35 (x64)
+├── build.bat                # One-click automated build & run script
+└── INCLUDE/                 # Self-contained 64-bit FASM header library (API, EQUATES, MACRO)
 ```
 
 ---
 
-## 🛠 Компиляция и сборка
+## 🛠️ Build & Compilation
 
-### Быстрый способ (через bat-файл):
-Дважды щелкните файл `build.bat` или запустите в командной строке:
+### One-Click Build Script:
+Run `build.bat` from Command Prompt:
 ```cmd
-cd C:\proekts\screenvideo\asm
+cd asm
 build.bat
 ```
 
-### Напрямую через FASM:
+### Direct Compilation with FASM:
 ```cmd
-cd C:\proekts\screenvideo\asm
+cd asm
 FASM.EXE screenvideo.asm screenvideo.exe
 ```
 
-Сборка проходит за **0.5 секунды** в 5 проходов и создаёт оптимизированный файл `screenvideo.exe` размером ~32 КБ.
+Compilation finishes in **~0.5 seconds** across 5 passes, producing an ultra-optimized `screenvideo.exe` of ~37 KB.
 
 ---
 
-## 🚀 Управление и горячие клавиши
+## ⌨️ Controls & Hotkeys
 
-| Клавиша / Элемент | Действие |
+| Key / Control | Action |
 |---|---|
-| **F5** | Начать запись экрана |
-| **F6** | Пауза / Возобновление записи |
-| **F10** | Остановка записи и сохранение AVI файла |
-| **F11** | Мгновенный снимок экрана (BMP) |
-| **ESC** | Отмена выделения прямоугольной области |
-| **Двойной клик в галерее** | Открыть видео или скриншот в стандартной программе Windows |
+| **`F5`** | Start screen recording |
+| **`F6`** | Pause / Resume recording |
+| **`F10`** | Stop recording and finalize AVI file |
+| **`F11`** | Instant screenshot (BMP) |
+| **`ESC`** | Cancel active region selection |
+| **Double-Click (Gallery)** | Open recorded video or screenshot in default Windows app |
 
-### Каталоги сохранения:
-- Видеозаписи: `recordings\rec_YYYYMMDD_HHMMSS.avi`
-- Снимки экрана: `screenshots\shot_YYYYMMDD_HHMMSS.bmp`
+### Output Storage Directories:
+- **Recordings:** `recordings\rec_YYYYMMDD_HHMMSS.avi`
+- **Screenshots:** `screenshots\shot_YYYYMMDD_HHMMSS.bmp`
 
 ---
 
-## 📊 Формат видео и совместимость
+## 📄 License
 
-- Записываемые файлы сохраняются в стандартный контейнер **AVI** (Uncompressed Video DIB, `fccType = 'vids'`).
-- Записи открываются без установки дополнительных кодеков во всех стандартных плеерах Windows (Windows Media Player, «Кино и ТВ», VLC, MPC-HC) и поддерживают прямое чтение в Python / OpenCV / FFmpeg.
+This assembly edition is distributed under the **MIT License** as part of the ScreenCapture Pro project.
+
+---
+
+<details>
+<summary><b>📖 Описание на русском языке (Нажмите, чтобы развернуть)</b></summary>
+
+### Преимущества FASM x64 редакции:
+* **Экстремальный размер**: Исполняемый файл всего **~37 КБ** без Python, Electron и сторонних зависимостей.
+* **Чистый x64 Win32 API**: Прямая работа с `GDI32`, `USER32`, `AVIFIL32`, `DWMAPI`.
+* **Тёмный современный интерфейс**: Кастомная отрисовка скругленных элементов, кнопок и карточек в тёмном стиле.
+* **Интерактивный селектор**: Выделение произвольной области экрана для записи или скриншота.
+* **Горячие клавиши**: `F5` — старт, `F6` — пауза, `F10` — стоп, `F11` — снимок, `ESC` — отмена.
+* **Встроенная галерея**: Менеджер записанных файлов и скриншотов с открытием в один клик.
+
+</details>
