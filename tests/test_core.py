@@ -7,7 +7,9 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import mss
 import numpy as np
 
 from src.core.config import AppConfig
@@ -17,6 +19,19 @@ from src.core.monitors import Region, get_available_monitors
 from src.core.recorder import RecordingState, ScreenRecorder
 from src.core.screenshot import capture_screenshot
 from src.utils.formatting import format_bytes, format_duration, format_duration_full
+
+
+class MockScreenShot:
+    """Mock ScreenShot for headless or display-restricted environments."""
+
+    def __init__(self, width: int = 320, height: int = 240) -> None:
+        self.width = max(1, width)
+        self.height = max(1, height)
+        self._data = np.zeros((self.height, self.width, 4), dtype=np.uint8)
+        self.raw = self._data.tobytes()
+
+    def __array__(self, dtype: object = None) -> np.ndarray:
+        return self._data
 
 
 class TestScreenCapturePro(unittest.TestCase):
@@ -29,7 +44,17 @@ class TestScreenCapturePro(unittest.TestCase):
         self.rec_dir.mkdir()
         self.snap_dir.mkdir()
 
+        def _mock_grab(*args: object, **kwargs: object) -> object:
+            monitor = args[0] if args and isinstance(args[0], dict) else kwargs.get("monitor", {})
+            w = monitor.get("width", 320) if isinstance(monitor, dict) else 320
+            h = monitor.get("height", 240) if isinstance(monitor, dict) else 240
+            return MockScreenShot(w, h)
+
+        self._patcher = patch.object(mss.MSS, "grab", side_effect=_mock_grab)
+        self._patcher.start()
+
     def tearDown(self) -> None:
+        self._patcher.stop()
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_formatting_utils(self) -> None:
@@ -171,9 +196,7 @@ class TestScreenCapturePro(unittest.TestCase):
         """Test AudioRecorder lifecycle."""
         from src.core.audio import AudioRecorder
 
-        audio_rec = AudioRecorder(
-            self.rec_dir, record_system_audio=True, record_microphone=False
-        )
+        audio_rec = AudioRecorder(self.rec_dir, record_system_audio=True, record_microphone=False)
         self.assertFalse(audio_rec.is_recording)
         started = audio_rec.start()
         if started:

@@ -89,7 +89,7 @@ def get_available_monitors() -> list[MonitorInfo]:
     """Get list of all active monitors on system."""
     monitors_list: list[MonitorInfo] = []
     try:
-        with mss.mss() as sct:
+        with mss.MSS() as sct:
             for idx, mon in enumerate(sct.monitors):
                 if idx == 0:
                     monitors_list.append(

@@ -1,36 +1,30 @@
-name: Build and Release
+﻿name: Build and Release
 
 on:
   push:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-release:
     runs-on: windows-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-      
-      - name: Install dependencies
-        run: uv sync
-      
-      - name: Build with Nuitka
+
+      - name: Build Native FASM x64 Executable
+        shell: cmd
         run: |
-          uv run python -m nuitka --onefile --windows-console-mode=disable --windows-icon-from-ico=icon.ico --enable-plugin=tk-inter --include-data-file=icon.ico=icon.ico --output-filename=ScreenCapturePro.exe main.py
-      
+          cd asm
+          FASM.EXE screenvideo.asm ScreenCapturePro.exe
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: ScreenCapturePro.exe
+          files: asm/ScreenCapturePro.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

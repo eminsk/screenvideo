@@ -11,11 +11,20 @@ dependencies = [
     "keyboard>=0.13.5",
     "ttkbootstrap>=1.10.0",
     "pillow>=10.0.0",
-    "nuitka>=2.0.0",
     "soundcard>=0.4.6",
     "soundfile>=0.14.0",
     "imageio-ffmpeg>=0.6.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.3.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100

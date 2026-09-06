@@ -124,13 +124,9 @@ class ScreenRecorder:
             timestamp_ms = int(time.time() * 1000)
 
             # Audio setup
-            has_audio = (
-                self._config.record_system_audio or self._config.record_microphone
-            )
+            has_audio = self._config.record_system_audio or self._config.record_microphone
             if has_audio:
-                self._temp_video_file = (
-                    self._config.recordings_dir / f"temp_vid_{timestamp_ms}.mp4"
-                )
+                self._temp_video_file = self._config.recordings_dir / f"temp_vid_{timestamp_ms}.mp4"
                 self._audio_recorder = AudioRecorder(
                     self._config.recordings_dir,
                     record_system_audio=self._config.record_system_audio,
@@ -250,7 +246,7 @@ class ScreenRecorder:
         target_fps = max(1, self._config.fps)
         frame_interval = 1.0 / target_fps
 
-        self._sct = mss.mss()
+        self._sct = mss.MSS()
 
         # Determine monitor and geometry
         with self._lock:

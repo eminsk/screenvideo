@@ -31,7 +31,7 @@ def capture_screenshot(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = output_dir / f"screenshot_{timestamp}.png"
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         if region and region.is_valid:
             norm_region = region.normalized()
             monitor = norm_region.to_mss_monitor()

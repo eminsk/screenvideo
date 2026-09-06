@@ -129,9 +129,7 @@ class SettingsView(ttk.Frame):
         self._combo_codec.grid(row=2, column=1, sticky="w", padx=10, pady=4)
 
         # 3. Audio Recording Card
-        card_audio = ttk.Labelframe(
-            scrollable_frame, text=" Настройки звука (Аудио) ", padding=12
-        )
+        card_audio = ttk.Labelframe(scrollable_frame, text=" Настройки звука (Аудио) ", padding=12)
         card_audio.pack(fill=X, pady=(0, 10))
 
         self._var_rec_sys_audio = ttk.BooleanVar(value=True)

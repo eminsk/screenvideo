@@ -2,9 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-4CAF50.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6.svg?logo=windows&logoColor=white)](https://microsoft.com/windows)
-[![Build: Nuitka](https://img.shields.io/badge/Build-Nuitka%20Standalone-FF9800.svg)](https://nuitka.net/)
-[![Code style: ruff](https://img.shields.io/badge/Code%20style-Ruff-000000.svg?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![Architecture: FASM x64](https://img.shields.io/badge/Native%20Build-FASM%20x64%20(~37%20KB)-E91E63.svg)](asm/README.md)
 
 **ScreenCapture Pro** is a modern, high-performance desktop screen recording and screenshot suite for Windows. Engineered with a zero-memory streaming architecture, low-latency WASAPI loopback audio, native Win32/x64 assembly optimizations, customizable hotkeys, interactive region snipping, and a sleek dark/light theme GUI.
 
@@ -109,20 +107,16 @@ uv run python -m unittest discover tests
 
 ---
 
-## 🛠️ Standalone Binary Build (Nuitka)
+## ⚡ Native Standalone Binary Build (Flat Assembler x64)
 
-To compile ScreenCapture Pro into a self-contained, standalone Windows `.exe` without requiring a local Python installation:
+In addition to the Python edition, ScreenCapture Pro includes a **pure 64-bit Flat Assembler (FASM x64) native edition** in [`asm/`](asm/README.md):
+- **Ultra-lightweight**: ~37 KB standalone executable with **zero external dependencies** and no Python runtime needed.
+- **Microsecond responsiveness**: Direct Win32 API calls (`USER32`, `GDI32`, `AVIFIL32`, `DWMAPI`).
+- **Instant Compilation**: Compile directly using the included `asm/FASM.EXE`:
 
-```bash
-uv run python -m nuitka \
-    --onefile \
-    --windows-console-mode=disable \
-    --windows-icon-from-ico=icon.ico \
-    --enable-plugin=tk-inter \
-    --include-data-file=icon.ico=icon.ico \
-    --include-data-file=icon.png=icon.png \
-    --output-filename=ScreenCapturePro.exe \
-    main.py
+```cmd
+cd asm
+build.bat
 ```
 
 ---
