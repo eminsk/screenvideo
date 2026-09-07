@@ -127,6 +127,7 @@ build.bat
 **ScreenCapture Pro** is maintained by **[@eminsk](https://github.com/eminsk)** as part of an active suite of systems engineering and quantitative open-source projects:
 
 ### Maintained Projects
+* **[nanogemm](https://github.com/eminsk/nanogemm)** — Minimalist, bare-metal SIMD & Assembly GEMM engine for Python. Sub-microsecond CPU matrix multiplication for AI & scientific computing (2.8x faster than NumPy on small tensors).
 * **[yfinance-ta-patterns](https://github.com/eminsk/yfinance-ta-patterns)** (v0.2.0) — Technical analysis candlestick scanner powered by TA-Lib with quantitative AI confluence scoring, automated trade setups, and 37 automated CI tests on Python 3.12–3.14.
 * **[xlsx_vievers](https://github.com/eminsk/xlsx_vievers)** — Desktop spreadsheet processor featuring 80+ formula functions, Chart Wizard, AutoFilter, Conditional Formatting, and hardware-accelerated SIMD SSE2 math engine with full automated CI coverage.
 * **[StackOverflowAPI](https://github.com/eminsk/StackOverflowAPI)** — Modern bilingual desktop reference and search client for Stack Overflow with native x64 FASM and CustomTkinter editions.
