@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-4CAF50.svg)](LICENSE)
 [![Architecture: FASM x64](https://img.shields.io/badge/Native%20Build-FASM%20x64%20(~37%20KB)-E91E63.svg)](asm/README.md)
+[![CI](https://github.com/eminsk/screenvideo/actions/workflows/ci.yml/badge.svg)](https://github.com/eminsk/screenvideo/actions/workflows/ci.yml)
 
 **ScreenCapture Pro** is a modern, high-performance desktop screen recording and screenshot suite for Windows. Engineered with a zero-memory streaming architecture, low-latency WASAPI loopback audio, native Win32/x64 assembly optimizations, customizable hotkeys, interactive region snipping, and a sleek dark/light theme GUI.
 
