@@ -15,6 +15,7 @@ wheels/
 *.onefile-build/
 *.exe
 !asm/FASM.EXE
+!asm/audiocap.exe
 
 # Recordings & Screenshots
 recordings/
