@@ -20,12 +20,14 @@
 - 💾 **Zero-Memory Direct-to-Disk Streaming**: Frames are encoded directly to disk via OpenCV/native pipes without ballooning RAM usage.
 - ⏸️ **Synchronous Pause & Resume**: Instant pause and continuation keeping audio and video streams in lockstep.
 - 🖱️ **Hardware Cursor Rendering & Halo Highlight**: Fast mouse pointer tracking with an optional translucent glowing halo for presentations and tutorials.
+- 🎯 **Mouse Click Ripple HUD**: Real-time visual animated ripple circles on left and right mouse clicks with customizable colors for software demos.
+- 🎞️ **Direct GIF Recording & 2-Pass Palette Exporter**: Create lightweight, crystal-clear animated GIFs using two-pass FFmpeg palette generation (`palettegen` + `paletteuse`), perfect for GitHub READMEs and bug reports.
 - 📸 **Instant High-Res Screenshots**: Capture fullscreen or region PNG snapshots in one keystroke (`F11`).
 - 🎛️ **Floating Mini-Toolbar Widget**: Compact, draggable on-screen controller during active recording with live duration timer and quick-action buttons.
 - ⏱️ **Animated Countdown (3.. 2.. 1..)**: Clean pre-recording visual countdown overlay.
-- 📁 **Integrated Media Gallery & Manager**: In-app viewer for recorded videos and screenshots, instant playback in default media player, and folder reveal.
+- 📁 **Integrated Media Gallery & Manager**: In-app viewer for recorded videos, GIFs, and screenshots, instant playback in default media player, folder reveal, and 1-click GIF conversion.
 - 🎨 **Modern Themed Interface**: Customizable dark and light palettes powered by `ttkbootstrap` (Darkly, Superhero, Solar, Cyborg, Cosmo, Flatly, Minty).
-- ⚙️ **Configurable Encoding**: Adjustable framerates (15, 24, 30, 60 FPS), audio bitrates (128k–320k), container formats (MP4, AVI, MKV), and custom hotkeys.
+- ⚙️ **Configurable Encoding**: Adjustable framerates (15, 24, 30, 60 FPS), audio bitrates (128k–320k), container formats (MP4, AVI, MKV, GIF), and custom hotkeys.
 
 ---
 
@@ -51,6 +53,7 @@ screenvideo/
 │   ├── core/                  # Core engine independent of UI
 │   │   ├── config.py          # Persistent JSON settings & state
 │   │   ├── cursor.py          # Fast pointer capture & halo renderer
+│   │   ├── gif.py             # 2-pass animated GIF palette generator
 │   │   ├── history.py         # Media catalog & metadata storage
 │   │   ├── hotkeys.py         # Safe global low-level keyboard listener
 │   │   ├── monitors.py        # Multi-monitor enumeration & geometry

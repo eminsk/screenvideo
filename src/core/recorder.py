@@ -15,7 +15,8 @@ import numpy as np
 
 from src.core.audio import AudioRecorder, merge_video_audio
 from src.core.config import AppConfig
-from src.core.cursor import CursorRenderer
+from src.core.cursor import CursorRenderer, hex_to_bgr
+from src.core.gif import export_to_gif
 from src.core.monitors import Region
 
 
@@ -237,6 +238,13 @@ class ScreenRecorder:
             self._audio_recorder = None
 
             if target_file and target_file.exists() and target_file.stat().st_size > 1024:
+                # If GIF format requested, convert final output to animated GIF
+                if getattr(self._config, "format", "mp4").lower() == "gif":
+                    gif_target = target_file.with_suffix(".gif")
+                    gif_res = export_to_gif(target_file, gif_target, fps=min(self._config.fps, 15))
+                    if gif_res and gif_res.exists():
+                        target_file.unlink(missing_ok=True)
+                        return gif_res
                 return target_file
 
             return None
@@ -352,13 +360,24 @@ class ScreenRecorder:
                 raw_img = self._sct.grab(monitor)
                 frame = cv2.cvtColor(np.asarray(raw_img, dtype=np.uint8), cv2.COLOR_BGRA2BGR)
 
-                # Draw mouse cursor if enabled
+                # Draw mouse cursor and click ripples if enabled
                 if self._config.record_cursor:
+                    c_color = hex_to_bgr(getattr(self._config, "cursor_color", "#FFD700"))
+                    l_color = hex_to_bgr(
+                        getattr(self._config, "click_color_left", "#00E5FF"), (255, 229, 0)
+                    )
+                    r_color = hex_to_bgr(
+                        getattr(self._config, "click_color_right", "#FF5252"), (82, 82, 255)
+                    )
                     self._cursor_renderer.render(
                         frame,
                         offset_x=offset_x,
                         offset_y=offset_y,
                         highlight=self._config.highlight_cursor,
+                        highlight_color_bgr=c_color,
+                        visualize_clicks=getattr(self._config, "visualize_clicks", True),
+                        click_color_left=l_color,
+                        click_color_right=r_color,
                     )
 
                 if self._writer and self._writer.isOpened():

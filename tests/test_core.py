@@ -239,6 +239,58 @@ class TestScreenCapturePro(unittest.TestCase):
         self.assertTrue(final_out.exists())
         self.assertGreater(final_out.stat().st_size, 1024)
 
+    def test_click_ripple_manager(self) -> None:
+        """Test ClickRippleManager state tracking, pruning, and rendering."""
+        from src.core.cursor import ClickRipple, ClickRippleManager, hex_to_bgr
+
+        mgr = ClickRippleManager()
+        self.assertEqual(len(mgr.ripples), 0)
+
+        # Direct append test
+        now = time.perf_counter()
+        mgr.ripples.append(
+            ClickRipple(x=100, y=100, start_time=now, color_bgr=(255, 229, 0), duration=0.2)
+        )
+        self.assertEqual(len(mgr.ripples), 1)
+
+        # Test frame rendering
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
+        mgr.render(frame, offset_x=0, offset_y=0)
+
+        # Prune expired
+        mgr.prune_expired(now + 1.0)
+        self.assertEqual(len(mgr.ripples), 0)
+
+        # Test hex_to_bgr
+        bgr = hex_to_bgr("#FFD700")
+        self.assertEqual(bgr, (0, 215, 255))
+        bgr_fallback = hex_to_bgr("invalid", default=(1, 2, 3))
+        self.assertEqual(bgr_fallback, (1, 2, 3))
+
+    def test_export_to_gif(self) -> None:
+        """Test 2-pass animated GIF export from video."""
+        import cv2
+
+        from src.core.gif import export_to_gif
+
+        # Test non-existent file handling
+        self.assertIsNone(export_to_gif(self.temp_dir / "non_existent.mp4"))
+
+        # Create small test video
+        vid_path = self.rec_dir / "test_gif_src.mp4"
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        w = cv2.VideoWriter(str(vid_path), fourcc, 15, (160, 120))
+        for i in range(15):
+            f = np.full((120, 160, 3), fill_value=i * 15, dtype=np.uint8)
+            w.write(f)
+        w.release()
+
+        gif_out = self.rec_dir / "test_output.gif"
+        res = export_to_gif(vid_path, gif_out, fps=10, width=120, max_colors=64)
+        self.assertIsNotNone(res)
+        self.assertTrue(gif_out.exists())
+        self.assertGreater(gif_out.stat().st_size, 100)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -141,6 +141,14 @@ class HistoryView(ttk.Frame):
         )
         btn_reveal.pack(side=LEFT, padx=3)
 
+        btn_gif = ttk.Button(
+            actions_bar,
+            text="🎞 Экспорт в GIF",
+            bootstyle="warning-outline",
+            command=self._on_export_gif_selected,
+        )
+        btn_gif.pack(side=LEFT, padx=3)
+
         btn_delete = ttk.Button(
             actions_bar,
             text="🗑 Удалить",
@@ -223,3 +231,40 @@ class HistoryView(ttk.Frame):
         if confirm:
             if self._history_mgr.delete_item(item.path):
                 self.refresh_list()
+
+    def _on_export_gif_selected(self) -> None:
+        item = self._get_selected_item()
+        if not item:
+            msgbox.showinfo(
+                "Экспорт в GIF", "Выберите видеозапись для конвертации в GIF.", parent=self
+            )
+            return
+        if item.file_type != "video":
+            msgbox.showwarning(
+                "Экспорт в GIF", "Конвертировать в GIF можно только видеофайлы.", parent=self
+            )
+            return
+
+        import threading
+
+        from src.core.gif import export_to_gif
+
+        def convert_worker() -> None:
+            gif_path = item.path.with_suffix(".gif")
+            res = export_to_gif(item.path, gif_path, fps=15)
+            self.after(0, lambda: self._on_gif_finished(res))
+
+        threading.Thread(target=convert_worker, daemon=True).start()
+        msgbox.showinfo(
+            "Экспорт в GIF",
+            f"Начата конвертация в анимированный GIF:\n{item.filename}\n\n"
+            "Файл автоматически появится в списке после завершения.",
+            parent=self,
+        )
+
+    def _on_gif_finished(self, res: object) -> None:
+        self.refresh_list()
+        if res and hasattr(res, "exists") and res.exists():
+            msgbox.showinfo("Экспорт завершён", f"GIF успешно сохранён:\n{res.name}", parent=self)
+        else:
+            msgbox.showerror("Ошибка экспорта", "Не удалось создать GIF-файл.", parent=self)

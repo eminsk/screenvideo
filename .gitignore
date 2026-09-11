@@ -21,6 +21,7 @@ wheels/
 recordings/
 screenshots/
 config.json
+.scratch_backup/
 
 # Lock file (optional, remove if you want to commit it)
 uv.lock

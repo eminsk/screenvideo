@@ -108,7 +108,7 @@ class SettingsView(ttk.Frame):
         self._combo_format = ttk.Combobox(
             grid_v,
             textvariable=self._var_format,
-            values=["mp4", "avi", "mkv"],
+            values=["mp4", "avi", "mkv", "gif"],
             state="readonly",
             width=12,
         )
@@ -225,6 +225,22 @@ class SettingsView(ttk.Frame):
             bootstyle="round-toggle",
         ).pack(anchor="w", pady=2)
 
+        self._var_highlight = ttk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            card_ui,
+            text="Подсветка курсора мыши (желтый ореол)",
+            variable=self._var_highlight,
+            bootstyle="round-toggle",
+        ).pack(anchor="w", pady=2)
+
+        self._var_clicks = ttk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            card_ui,
+            text="Визуализация кликов мыши (анимированные круги)",
+            variable=self._var_clicks,
+            bootstyle="round-toggle",
+        ).pack(anchor="w", pady=2)
+
         self._var_sound = ttk.BooleanVar(value=True)
         ttk.Checkbutton(
             card_ui,
@@ -269,6 +285,8 @@ class SettingsView(ttk.Frame):
         self._var_k_stop.set(cfg.hotkey_stop)
         self._var_k_snap.set(cfg.hotkey_screenshot)
         self._var_minimize.set(cfg.minimize_on_record)
+        self._var_highlight.set(getattr(cfg, "highlight_cursor", True))
+        self._var_clicks.set(getattr(cfg, "visualize_clicks", True))
         self._var_sound.set(cfg.sound_effects)
 
         # Match theme combo
@@ -319,6 +337,8 @@ class SettingsView(ttk.Frame):
         cfg.hotkey_screenshot = self._var_k_snap.get().strip().lower()
 
         cfg.minimize_on_record = self._var_minimize.get()
+        cfg.highlight_cursor = self._var_highlight.get()
+        cfg.visualize_clicks = self._var_clicks.get()
         cfg.sound_effects = self._var_sound.get()
 
         selected_theme = self._combo_theme.get()

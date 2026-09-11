@@ -25,6 +25,9 @@ class AppConfig:
     record_cursor: bool = True
     highlight_cursor: bool = True
     cursor_color: str = "#FFD700"  # Gold yellow halo
+    visualize_clicks: bool = True
+    click_color_left: str = "#00E5FF"  # Vivid Cyan
+    click_color_right: str = "#FF5252"  # Coral Red
 
     # Countdown & mini overlay
     show_countdown: bool = True
