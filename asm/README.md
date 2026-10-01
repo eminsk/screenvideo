@@ -23,18 +23,21 @@ Designed as a bare-metal native counterpart to the Python edition of `ScreenCapt
   - Dark segmented tab switcher with active neon indicator.
   - High-precision digital timer rendered in Consolas 32pt.
 - **100% Native Wide Unicode (UTF-16)**: Full international character support via `INCLUDE\ENCODING\UTF8.INC` and Win32 `W` APIs (`CreateWindowExW`, `DrawTextW`, `SetWindowTextW`, `FindFirstFileW`, `CreateFileW`).
-- **Interactive Snipping Tool Overlay**:
+- **📋 Native Windows Clipboard Integration (`CF_DIB`)**: Zero-overhead clipboard integration with pure Win32 API (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData(CF_DIB, ...)`). Auto-copies all snapshots and snips for immediate `Ctrl+V` pasting into Telegram, Discord, Slack, Word, or browsers.
+- **✂️ Interactive Snipping Tool & HUD**:
   - Fullscreen translucent sniper overlay with crosshair cursor (`IDC_CROSS`).
-  - Smooth rectangular region focus framing (`DrawFocusRect`).
-  - Instant cancellation with `ESC` or right mouse click.
+  - Real-time bright desktop cutout and neon cyan highlight border (`#00B4E6`).
+  - Real-time dimension HUD with `(в буфер)` indicator.
+  - Dedicated global hotkey (`Shift+F11`), right-click fullscreen snip, and `ESC` cancellation.
 - **Global Low-Level Hotkeys**:
   - `F5` — Start screen recording.
   - `F6` — Pause / Resume recording.
   - `F10` — Stop recording and finalize file headers.
-  - `F11` — Instant fullscreen or region screenshot.
+  - `F11` — Instant fullscreen or region screenshot (auto-copied to clipboard).
+  - `Shift+F11` — Interactive snipping tool (auto-copied to clipboard).
 - **Built-in Media Gallery & Catalog**:
   - Native list view table (`SysListView32`) with sorting, file types, human-readable sizes (KB / MB), and creation timestamps.
-  - Actions: Open File, Reveal in Explorer with selection (`/select`), Refresh, Delete.
+  - Actions: Open File, Reveal in Explorer with selection (`/select`), 1-click "📋 В буфер", `Ctrl+C` copy shortcut, Refresh, Delete.
 - **Hardware Cursor Capture**: High-precision cursor position tracking and icon blitting (`GetCursorInfo`, `DrawIconEx`) on screenshots and video stream frames.
 - **Embedded Resources**: Hi-DPI application icon (ID 1) and Common Controls 6.0 XML manifest compiled directly into the PE `.rsrc` section.
 
@@ -89,9 +92,12 @@ Compilation finishes in **~0.5 seconds** across 5 passes, producing an ultra-opt
 |---|---|
 | **`F5`** | Start screen recording |
 | **`F6`** | Pause / Resume recording |
-| **`F10`** | Stop recording and finalize AVI file |
-| **`F11`** | Instant screenshot (BMP) |
+| **`F10`** | Stop recording and finalize video file |
+| **`F11`** | Instant screenshot (BMP + auto-copy to clipboard) |
+| **`Shift+F11`** | Interactive Snipping Tool (crosshair region selection + auto-copy) |
+| **`Right-Click` (Snip mode)** | Instant full-screen screenshot to clipboard |
 | **`ESC`** | Cancel active region selection |
+| **`Ctrl+C` (Gallery)** | Copy selected screenshot to system clipboard (`CF_DIB`) |
 | **Double-Click (Gallery)** | Open recorded video or screenshot in default Windows app |
 
 ### Output Storage Directories:

@@ -21,6 +21,17 @@ ID_HOTKEY_START         = 101
 ID_HOTKEY_PAUSE         = 102
 ID_HOTKEY_STOP          = 103
 ID_HOTKEY_SCREENSHOT    = 104
+ID_HOTKEY_SNIP          = 105
+
+; Modifiers for RegisterHotKey
+MOD_ALT                 = 0x0001
+MOD_CONTROL             = 0x0002
+MOD_SHIFT               = 0x0004
+MOD_WIN                 = 0x0008
+
+; Region Selector Modes
+REGION_MODE_RECORD      = 0
+REGION_MODE_SNIP        = 1
 
 ; Virtual Key Codes
 VK_F5                   = 0x74
@@ -50,6 +61,7 @@ IDC_LBL_SIZE            = 1106
 IDC_COMBO_MONITOR       = 1110
 IDC_BTN_SELECT_REGION   = 1111
 IDC_BTN_FULLSCREEN      = 1112
+IDC_BTN_SNIP_REGION     = 1113
 
 IDC_CHK_CURSOR          = 1121
 IDC_CHK_HIGHLIGHT       = 1122
@@ -70,6 +82,7 @@ IDC_BTN_OPEN_FOLDER     = 1202
 IDC_BTN_REFRESH         = 1203
 IDC_BTN_DELETE          = 1204
 IDC_BTN_OPEN_REC_DIR    = 1205
+IDC_BTN_COPY_CLIPBOARD  = 1206
 IDC_FILTER_ALL          = 1210
 IDC_FILTER_VIDEO        = 1211
 IDC_FILTER_SHOTS        = 1212
@@ -217,6 +230,7 @@ LVCF_SUBITEM            = 0x0008
 LVIF_TEXT               = 0x0001
 LVNI_SELECTED           = 0x0002
 NM_DBLCLK               = -3
+LVN_KEYDOWN             = -155
 
 CB_ADDSTRING            = 0x0143
 CB_SETCURSEL            = 0x014E

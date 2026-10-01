@@ -194,8 +194,13 @@ proc CreateRecordTabControls
 
     invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnSelectReg,\
            WS_CHILD or WS_VISIBLE or BS_OWNERDRAW or WS_TABSTOP,\
-           30, 256, 210, 32, [hWndMain], IDC_BTN_SELECT_REGION, [hInst], NULL
+           30, 256, 224, 32, [hWndMain], IDC_BTN_SELECT_REGION, [hInst], NULL
     mov [hBtnSelectRegion], rax
+
+    invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnSnipReg,\
+           WS_CHILD or WS_VISIBLE or BS_OWNERDRAW or WS_TABSTOP,\
+           264, 256, 240, 32, [hWndMain], IDC_BTN_SNIP_REGION, [hInst], NULL
+    mov [hBtnSnipRegion], rax
 
     ; Card 3: Quick Options (Modern Toggle Switches with BS_OWNERDRAW)
     invoke CreateWindowExW, 0, addr szButtonClass, addr szChkCursor,\
@@ -334,17 +339,22 @@ proc CreateGalleryTabControls
     ; Action Buttons below ListView
     invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnPlay,\
            WS_CHILD or BS_OWNERDRAW or WS_TABSTOP,\
-           16, 438, 140, 44, [hWndMain], IDC_BTN_PLAY, [hInst], NULL
+           16, 438, 120, 44, [hWndMain], IDC_BTN_PLAY, [hInst], NULL
     mov [hBtnPlay], rax
 
     invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnShowInFolder,\
            WS_CHILD or BS_OWNERDRAW or WS_TABSTOP,\
-           164, 438, 160, 44, [hWndMain], IDC_BTN_OPEN_FOLDER, [hInst], NULL
+           144, 438, 116, 44, [hWndMain], IDC_BTN_OPEN_FOLDER, [hInst], NULL
     mov [hBtnShowInFolder], rax
+
+    invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnCopyClipboard,\
+           WS_CHILD or BS_OWNERDRAW or WS_TABSTOP,\
+           268, 438, 126, 44, [hWndMain], IDC_BTN_COPY_CLIPBOARD, [hInst], NULL
+    mov [hBtnCopyClipboard], rax
 
     invoke CreateWindowExW, 0, addr szButtonClass, addr szBtnDelete,\
            WS_CHILD or BS_OWNERDRAW or WS_TABSTOP,\
-           408, 438, 110, 44, [hWndMain], IDC_BTN_DELETE, [hInst], NULL
+           402, 438, 116, 44, [hWndMain], IDC_BTN_DELETE, [hInst], NULL
     mov [hBtnDelete], rax
 
     ret
@@ -521,7 +531,7 @@ proc PaintCustomBackgroundAndCards uses rbx rsi rdi
     ; Card 3: Звук
     invoke RoundRect, rbx, 16, 290, 518, 378, 8, 8
     ; Card 4: Горячие клавиши
-    invoke RoundRect, rbx, 16, 388, 518, 484, 8, 8
+    invoke RoundRect, rbx, 16, 388, 518, 508, 8, 8
 
     ; 1px subtle borders around edit boxes
     invoke SelectObject, rbx, [hPenBorderLight]
@@ -549,6 +559,7 @@ proc PaintCustomBackgroundAndCards uses rbx rsi rdi
     fastcall DrawAutoText, rbx, 30, 424, addr szLblHkPause
     fastcall DrawAutoText, rbx, 30, 444, addr szLblHkStop
     fastcall DrawAutoText, rbx, 30, 464, addr szLblHkShot
+    fastcall DrawAutoText, rbx, 30, 484, addr szLblHkSnip
 
     ; Hotkey key badges
     invoke SelectObject, rbx, [hBrushBtnDark]
@@ -557,6 +568,7 @@ proc PaintCustomBackgroundAndCards uses rbx rsi rdi
     invoke RoundRect, rbx, 160, 420, 220, 438, 4, 4
     invoke RoundRect, rbx, 160, 440, 220, 458, 4, 4
     invoke RoundRect, rbx, 160, 460, 220, 478, 4, 4
+    invoke RoundRect, rbx, 160, 480, 240, 498, 4, 4
 
     invoke SetTextColor, rbx, 0x00FFFFFF
     invoke SelectObject, rbx, [hFontBold]
@@ -564,6 +576,7 @@ proc PaintCustomBackgroundAndCards uses rbx rsi rdi
     fastcall DrawAutoText, rbx, 183, 421, addr szKeyF6
     fastcall DrawAutoText, rbx, 179, 441, addr szKeyF10
     fastcall DrawAutoText, rbx, 179, 461, addr szKeyF11
+    fastcall DrawAutoText, rbx, 169, 481, addr szKeyShiftF11
 
 .finish_paint:
     invoke EndPaint, [hWndMain], addr ps
@@ -861,7 +874,7 @@ proc DrawCustomButton uses rbx rsi rdi r12 r13 r14 r15, lpDrawItem
 
 .check_btn_show_folder:
     cmp ebx, IDC_BTN_OPEN_FOLDER
-    jne .check_btn_delete
+    jne .check_btn_copy
 
     invoke SelectObject, rsi, [hBrushBtnDark]
     invoke SelectObject, rsi, [hPenBorderLight]
@@ -870,6 +883,19 @@ proc DrawCustomButton uses rbx rsi rdi r12 r13 r14 r15, lpDrawItem
     invoke SetTextColor, rsi, COLOR_TEXT_MAIN
     invoke SelectObject, rsi, [hFontBold]
     lea rax, [szBtnShowInFolder]
+    jmp .exec_draw_text
+
+.check_btn_copy:
+    cmp ebx, IDC_BTN_COPY_CLIPBOARD
+    jne .check_btn_delete
+
+    invoke SelectObject, rsi, [hBrushBtnDark]
+    invoke SelectObject, rsi, [hPenCyan]
+    invoke RoundRect, rsi, r12d, r13d, r14d, r15d, 6, 6
+    invoke SetBkMode, rsi, 1
+    invoke SetTextColor, rsi, 0x00D8B400 ; Info Cyan text
+    invoke SelectObject, rsi, [hFontBold]
+    lea rax, [szBtnCopyClipboard]
     jmp .exec_draw_text
 
 .check_btn_delete:
@@ -956,6 +982,15 @@ proc DrawCustomButton uses rbx rsi rdi r12 r13 r14 r15, lpDrawItem
     invoke SetTextColor, rsi, COLOR_TEXT_MAIN
     invoke SelectObject, rsi, [hFontRegular]
 
+    cmp ebx, IDC_BTN_SNIP_REGION
+    jne .not_snip_btn
+    invoke SelectObject, rsi, [hPenCyan]
+    invoke SetTextColor, rsi, 0x00D8B400 ; Cyan text
+    invoke SelectObject, rsi, [hFontBold]
+    lea rax, [szBtnSnipReg]
+    jmp .exec_draw_text
+
+.not_snip_btn:
     cmp ebx, IDC_BTN_SELECT_REGION
     jne .g1
     lea rax, [szBtnSelectReg]
@@ -1024,6 +1059,7 @@ proc SwitchTab uses rbx, nTab
     invoke ShowWindow, [hComboMonitor], ebx
     invoke ShowWindow, [hBtnSelectRegion], ebx
     invoke ShowWindow, [hBtnFullscreen], ebx
+    invoke ShowWindow, [hBtnSnipRegion], ebx
     invoke ShowWindow, [hChkCursor], ebx
     invoke ShowWindow, [hChkCountdown], ebx
     invoke ShowWindow, [hChkAudioSys], ebx
@@ -1049,6 +1085,7 @@ proc SwitchTab uses rbx, nTab
     invoke ShowWindow, [hListGallery], ebx
     invoke ShowWindow, [hBtnPlay], ebx
     invoke ShowWindow, [hBtnShowInFolder], ebx
+    invoke ShowWindow, [hBtnCopyClipboard], ebx
     invoke ShowWindow, [hBtnDelete], ebx
 
     ; Tab 2 Controls Visibility
@@ -1097,6 +1134,7 @@ proc UpdateUIState
     invoke EnableWindow, [hBtnStop], FALSE
     invoke EnableWindow, [hBtnSelectRegion], TRUE
     invoke EnableWindow, [hBtnFullscreen], TRUE
+    invoke EnableWindow, [hBtnSnipRegion], TRUE
     invoke SetWindowTextW, [hLblStatusBadge], addr szStatusIdle
     invoke InvalidateRect, [hBtnStart], NULL, TRUE
     invoke InvalidateRect, [hBtnPause], NULL, TRUE
@@ -1109,6 +1147,7 @@ proc UpdateUIState
     invoke EnableWindow, [hBtnStop], TRUE
     invoke EnableWindow, [hBtnSelectRegion], FALSE
     invoke EnableWindow, [hBtnFullscreen], FALSE
+    invoke EnableWindow, [hBtnSnipRegion], FALSE
     invoke SetWindowTextW, [hLblStatusBadge], addr szStatusRecording
     invoke InvalidateRect, [hBtnStart], NULL, TRUE
     invoke InvalidateRect, [hBtnPause], NULL, TRUE

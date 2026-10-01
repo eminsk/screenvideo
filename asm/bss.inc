@@ -25,6 +25,7 @@ section '.bss' readable writeable
   hComboMonitor         dq ?
   hBtnSelectRegion      dq ?
   hBtnFullscreen        dq ?
+  hBtnSnipRegion        dq ?
   hChkCursor            dq ?
   hChkHighlight         dq ?
   hChkCountdown         dq ?
@@ -46,6 +47,7 @@ section '.bss' readable writeable
   hListGallery          dq ?
   hBtnPlay              dq ?
   hBtnShowInFolder      dq ?
+  hBtnCopyClipboard     dq ?
   hBtnDelete            dq ?
 
   ; Tab 2: Настройки Handles
@@ -63,6 +65,7 @@ section '.bss' readable writeable
   hLblHkPause           dq ?
   hLblHkStop            dq ?
   hLblHkShot            dq ?
+  hLblHkSnip            dq ?
 
   ; Application State
   currentTab            dd ?
@@ -75,6 +78,8 @@ section '.bss' readable writeable
   audioSysEnabled       dd ?
   audioMicEnabled       dd ?
   audioBitrate          dd ?
+  copyToClipboard       dd ?
+  regionSelectorMode    dd ?
   gal_filterMode        dd ?
 
   ; Screen Capture Bounds

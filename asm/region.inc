@@ -232,6 +232,26 @@ endp
 
 
 ; ----------------------------------------------------------------------------
+; StartSelectRecordRegion - Selects region for video recording
+; ----------------------------------------------------------------------------
+proc StartSelectRecordRegion
+    mov [regionSelectorMode], REGION_MODE_RECORD
+    call ShowRegionSelector
+    ret
+endp
+
+
+; ----------------------------------------------------------------------------
+; StartInteractiveSnip - Interactive Snipping Tool with instant clipboard copy
+; ----------------------------------------------------------------------------
+proc StartInteractiveSnip
+    mov [regionSelectorMode], REGION_MODE_SNIP
+    call ShowRegionSelector
+    ret
+endp
+
+
+; ----------------------------------------------------------------------------
 ; ShowRegionSelector - Initializes freeze-screen overlay
 ; ----------------------------------------------------------------------------
 proc ShowRegionSelector uses rbx rsi rdi
@@ -358,7 +378,7 @@ proc RegionOverlayWndProc uses rbx rsi rdi r12 r13 r14 r15, hwnd, wmsg, wparam, 
     cmp edx, WM_LBUTTONUP
     je .on_lbutton_up
     cmp edx, WM_RBUTTONUP
-    je .on_cancel
+    je .on_rbutton_up
     cmp edx, WM_KEYDOWN
     je .on_keydown
     cmp edx, WM_PAINT
@@ -451,7 +471,16 @@ proc RegionOverlayWndProc uses rbx rsi rdi r12 r13 r14 r15, hwnd, wmsg, wparam, 
     sub ecx, eax
     mov [rectH], ecx
 
-    ; Minimum valid size: at least 16x16 pixels
+    ; Minimum valid size: at least 8x8 pixels
+    cmp [rectW], 8
+    jl .on_cancel
+    cmp [rectH], 8
+    jl .on_cancel
+
+    cmp [regionSelectorMode], REGION_MODE_SNIP
+    je .finalize_snip
+
+    ; Mode REGION_MODE_RECORD:
     cmp [rectW], 16
     jl .on_cancel
     cmp [rectH], 16
@@ -496,12 +525,39 @@ proc RegionOverlayWndProc uses rbx rsi rdi r12 r13 r14 r15, hwnd, wmsg, wparam, 
     xor eax, eax
     ret
 
+.finalize_snip:
+    ; Mode REGION_MODE_SNIP: Capture and save the snip immediately
+    fastcall TakeSnipScreenshot, [leftX], [topY], [rectW], [rectH]
+
+    ; Close overlay and restore main window
+    invoke DestroyWindow, [hwnd]
+    xor eax, eax
+    ret
+
 .lup_done:
     xor eax, eax
     ret
 
 ; ----------------------------------------------------------------------------
-; ESC or Right-click: Cancel region selection
+; Right-click: Snip full screen if in SNIP mode, otherwise cancel
+; ----------------------------------------------------------------------------
+.on_rbutton_up:
+    cmp [isOverlayDragging], 1
+    jne @f
+    invoke ReleaseCapture
+    mov [isOverlayDragging], 0
+@@:
+    cmp [regionSelectorMode], REGION_MODE_SNIP
+    jne .on_cancel
+
+    ; Right-click in Snip Mode: Full-screen snip
+    fastcall TakeSnipScreenshot, 0, 0, [vScreenW], [vScreenH]
+    invoke DestroyWindow, [hwnd]
+    xor eax, eax
+    ret
+
+; ----------------------------------------------------------------------------
+; ESC: Cancel region selection
 ; ----------------------------------------------------------------------------
 .on_keydown:
     cmp r8d, VK_ESCAPE
@@ -588,15 +644,33 @@ proc RegionOverlayWndProc uses rbx rsi rdi r12 r13 r14 r15, hwnd, wmsg, wparam, 
     invoke SelectObject, [hOverlayMemDC], [hOldBrush]
     invoke DeleteObject, [hPenBorder]
 
-    ; Draw floating dimension badge: "1280×720"
+    ; Draw floating dimension badge: "1280×720" or "1280×720 (в буфер)"
     movsxd r8, [rectW]
     movsxd r9, [rectH]
-    invoke wsprintfW, addr szBadgeDimBuf, addr fmtRegionSummary, r8, r9
-
-    ; Position badge below selection or above if near bottom edge
+    cmp [regionSelectorMode], REGION_MODE_SNIP
+    jne .hud_record_badge
+    invoke wsprintfW, addr szBadgeDimBuf, addr fmtSnipBadgeDim, r8, r9
     mov eax, [leftX]
     mov [badgeX], eax
+    mov eax, [bottomY]
+    add eax, 6
+    mov [badgeY], eax
+    add eax, 24
+    cmp eax, [vScreenH]
+    jle @f
+    mov eax, [topY]
+    sub eax, 28
+    mov [badgeY], eax
+@@:
+    mov eax, [badgeX]
+    add eax, 170
+    mov [badgeRight], eax
+    jmp .hud_badge_pos_done
 
+.hud_record_badge:
+    invoke wsprintfW, addr szBadgeDimBuf, addr fmtRegionSummary, r8, r9
+    mov eax, [leftX]
+    mov [badgeX], eax
     mov eax, [bottomY]
     add eax, 6
     mov [badgeY], eax
@@ -610,6 +684,8 @@ proc RegionOverlayWndProc uses rbx rsi rdi r12 r13 r14 r15, hwnd, wmsg, wparam, 
     mov eax, [badgeX]
     add eax, 100
     mov [badgeRight], eax
+
+.hud_badge_pos_done:
 
     mov eax, [badgeY]
     add eax, 22

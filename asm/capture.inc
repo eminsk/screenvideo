@@ -96,6 +96,70 @@ endp
 
 
 ; ----------------------------------------------------------------------------
+; CopyDIBBufferToClipboard - Puts current DIB (BITMAPINFOHEADER + pixels) onto Windows Clipboard
+; Standard CF_DIB format (Format 8) for instant Ctrl+V into any application
+; ----------------------------------------------------------------------------
+proc CopyDIBBufferToClipboard uses rbx rsi rdi r12
+    ; Total size = 40 (sizeof BITMAPINFOHEADER) + sb_imageSize
+    mov eax, [sb_imageSize]
+    add eax, 40
+    mov ebx, eax
+
+    invoke GlobalAlloc, 2, rbx ; GMEM_MOVEABLE = 0x0002
+    test rax, rax
+    jz .fail
+    mov r12, rax ; r12 = hGlobal
+
+    invoke GlobalLock, r12
+    test rax, rax
+    jz .free_hglobal
+    mov rdi, rax ; rdi = pDest
+
+    ; 1. Copy BITMAPINFOHEADER (40 bytes)
+    lea rsi, [sb_bih]
+    mov ecx, 40
+    rep movsb
+
+    ; 2. Copy Pixel Data (sb_imageSize bytes)
+    mov rsi, [sb_pBits]
+    mov ecx, [sb_imageSize]
+    rep movsb
+
+    invoke GlobalUnlock, r12
+
+    ; 3. Open clipboard with retry loop
+    mov ebx, 5
+.retry_open:
+    invoke OpenClipboard, [hWndMain]
+    test eax, eax
+    jnz .opened
+    invoke Sleep, 15
+    dec ebx
+    jnz .retry_open
+    jmp .free_hglobal
+
+.opened:
+    invoke EmptyClipboard
+    invoke SetClipboardData, 8, r12 ; CF_DIB = 8
+    test rax, rax
+    jnz .success
+    invoke CloseClipboard
+    jmp .free_hglobal
+
+.success:
+    invoke CloseClipboard
+    mov eax, 1
+    ret
+
+.free_hglobal:
+    invoke GlobalFree, r12
+.fail:
+    xor eax, eax
+    ret
+endp
+
+
+; ----------------------------------------------------------------------------
 ; SaveBitmapToFile - Writes 24-bit uncompressed BMP to disk
 ; ----------------------------------------------------------------------------
 proc SaveBitmapToFile uses rbx rsi rdi
@@ -167,6 +231,11 @@ proc SaveBitmapToFile uses rbx rsi rdi
     invoke CloseHandle, [sb_hFile]
 
 .free_mem:
+    ; Auto-copy to Windows Clipboard if enabled
+    cmp [copyToClipboard], 1
+    jne @f
+    call CopyDIBBufferToClipboard
+@@:
     invoke VirtualFree, [sb_pBits], 0, 0x8000 ; MEM_RELEASE
     mov eax, 1
     ret
@@ -278,6 +347,67 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     call RefreshGalleryList
 
 .done:
+    ret
+endp
+
+
+; ----------------------------------------------------------------------------
+; TakeSnipScreenshot - Captures the selected snip rectangle from frozen bright desktop
+; ----------------------------------------------------------------------------
+proc TakeSnipScreenshot uses rbx rsi rdi, sX:DWORD, sY:DWORD, sW:DWORD, sH:DWORD
+    mov [shot_cX], ecx
+    mov [shot_cY], edx
+    mov [shot_cW], r8d
+    mov [shot_cH], r9d
+
+    ; Format Unique Screenshot Filename with Timestamp
+    invoke GetLocalTime, addr stLocal
+    movzx r10, [stLocal.wYear]
+    movzx r11, [stLocal.wMonth]
+    movzx r12, [stLocal.wDay]
+    movzx r13, [stLocal.wHour]
+    movzx r14, [stLocal.wMinute]
+    movzx r15, [stLocal.wSecond]
+    invoke wsprintfW, addr tempBuf, addr fmtShotFilenameRel, r10, r11, r12, r13, r14, r15
+    invoke lstrcpyW, addr szCurrentShotFile, addr szShotDir
+    invoke lstrcatW, addr szCurrentShotFile, addr tempBuf
+
+    ; Create Screen & Memory DC for the snip
+    invoke GetWindowDC, 0
+    mov [shot_hScreenDC], rax
+    invoke CreateCompatibleDC, [shot_hScreenDC]
+    mov [shot_hMemDC], rax
+    invoke CreateCompatibleBitmap, [shot_hScreenDC], [shot_cW], [shot_cH]
+    mov [shot_hBmp], rax
+    invoke SelectObject, [shot_hMemDC], [shot_hBmp]
+    mov [shot_hOldBmp], rax
+
+    ; BitBlt the snip directly from frozen bright desktop DC
+    invoke BitBlt, [shot_hMemDC], 0, 0, [shot_cW], [shot_cH],\
+           [hOverlayBrightDC], [shot_cX], [shot_cY], 0x00CC0020 ; SRCCOPY
+
+    ; Save to BMP File (which auto-copies to Windows Clipboard via CF_DIB)
+    call SaveBitmapToFile
+
+    ; Clean up GDI handles
+    invoke SelectObject, [shot_hMemDC], [shot_hOldBmp]
+    invoke DeleteObject, [shot_hBmp]
+    invoke DeleteDC, [shot_hMemDC]
+    invoke ReleaseDC, 0, [shot_hScreenDC]
+
+    ; Sound feedback
+    invoke MessageBeep, 0x00000040 ; MB_ICONASTERISK
+
+    ; Update Status Bar
+    invoke wsprintfW, addr statusMsgBuf, addr szStatusSnipSavedMsg, addr szCurrentShotFile
+    invoke SetWindowTextW, [hStatusBar], addr statusMsgBuf
+
+    ; Auto-refresh gallery if on gallery tab
+    cmp [currentTab], TAB_GALLERY
+    jne .snip_done
+    call RefreshGalleryList
+
+.snip_done:
     ret
 endp
 

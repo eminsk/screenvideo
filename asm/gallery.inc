@@ -363,3 +363,102 @@ proc DeleteSelectedGalleryItem
     invoke SetWindowTextW, [hStatusBar], addr szStatusNoFileSelMsg
     ret
 endp
+
+
+; ----------------------------------------------------------------------------
+; CopySelectedGalleryItemToClipboard - Copies selected screenshot BMP to clipboard
+; ----------------------------------------------------------------------------
+proc CopySelectedGalleryItemToClipboard uses rbx rsi rdi r12 r13
+    local hFile:QWORD
+    local dwFileSize:DWORD
+    local dwDibSize:DWORD
+    local dwBytesRead:DWORD
+    local bmpMagic:WORD
+
+    mov [hFile], 0
+
+    call GetSelectedGalleryFilePath
+    test eax, eax
+    jz .no_sel
+
+    ; Open selected file for reading
+    invoke CreateFileW, addr tempBuf, 0x80000000, 1, NULL, 3, 0x80, NULL ; GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
+    cmp rax, -1
+    je .file_error
+    mov [hFile], rax
+
+    ; Check file size
+    invoke GetFileSize, [hFile], NULL
+    mov [dwFileSize], eax
+    cmp eax, 54 ; At least 14 (BFH) + 40 (BIH) bytes
+    jbe .close_and_error
+
+    ; Verify BMP magic 'BM' (0x4D42)
+    invoke ReadFile, [hFile], addr bmpMagic, 2, addr dwBytesRead, NULL
+    cmp [bmpMagic], 0x4D42
+    jne .close_and_error
+
+    ; DIB size = fileSize - 14
+    mov eax, [dwFileSize]
+    sub eax, 14
+    mov [dwDibSize], eax
+
+    ; Allocate moveable global memory for CF_DIB
+    invoke GlobalAlloc, 2, [dwDibSize] ; GMEM_MOVEABLE = 2
+    test rax, rax
+    jz .close_and_error
+    mov r12, rax ; r12 = hGlobal
+
+    invoke GlobalLock, r12
+    test rax, rax
+    jz .free_hglobal
+    mov r13, rax ; r13 = pLocked
+
+    ; Seek past 14-byte BITMAPFILEHEADER
+    invoke SetFilePointer, [hFile], 14, NULL, 0 ; FILE_BEGIN = 0
+
+    ; Read DIB payload directly into global memory
+    invoke ReadFile, [hFile], r13, [dwDibSize], addr dwBytesRead, NULL
+    invoke CloseHandle, [hFile]
+    mov [hFile], 0
+
+    invoke GlobalUnlock, r12
+
+    ; Set clipboard data
+    invoke OpenClipboard, [hWndMain]
+    test eax, eax
+    jz .free_hglobal
+
+    invoke EmptyClipboard
+    invoke SetClipboardData, 8, r12 ; CF_DIB = 8
+    invoke CloseClipboard
+
+    ; Sound and status feedback
+    invoke MessageBeep, 0x00000040 ; MB_ICONASTERISK
+    invoke SetWindowTextW, [hStatusBar], addr szStatusCopiedToClipboard
+    mov eax, 1
+    ret
+
+.free_hglobal:
+    invoke GlobalFree, r12
+.close_and_error:
+    cmp [hFile], 0
+    je .err_msg
+    invoke CloseHandle, [hFile]
+.err_msg:
+    invoke MessageBeep, 0x00000010 ; MB_ICONERROR
+    invoke SetWindowTextW, [hStatusBar], addr szStatusCopyError
+    xor eax, eax
+    ret
+
+.file_error:
+    invoke MessageBeep, 0x00000010
+    invoke SetWindowTextW, [hStatusBar], addr szStatusCopyError
+    xor eax, eax
+    ret
+
+.no_sel:
+    invoke SetWindowTextW, [hStatusBar], addr szStatusNoFileSelMsg
+    xor eax, eax
+    ret
+endp

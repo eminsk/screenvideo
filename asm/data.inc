@@ -54,6 +54,7 @@ section '.data' data readable writeable
   szMonAll              du '🖥 Все мониторы (Виртуальный экран): 1920×1080', 0
   szMonPrimary          du '🖥 Монитор 1: 1920×1080 (Основной)', 0
   szBtnSelectReg        du '✂ Выбрать область', 0
+  szBtnSnipReg          du '✂ Ножницы (Shift+F11)', 0
   szBtnResetFull        du '🖥 Сбросить на весь экран', 0
 
   szCardOptsTitle       du 'Быстрые опции', 0
@@ -89,6 +90,7 @@ section '.data' data readable writeable
 
   szBtnPlay             du '▶ Воспроизвести', 0
   szBtnShowInFolder     du '📁 Показать в папке', 0
+  szBtnCopyClipboard    du '📋 В буфер', 0
   szBtnDelete           du '🗑 Удалить', 0
 
   ; --------------------------------------------------------------------------
@@ -122,10 +124,12 @@ section '.data' data readable writeable
   szLblHkPause          du 'Пауза записи:', 0
   szLblHkStop           du 'Стоп записи:', 0
   szLblHkShot           du 'Снимок экрана:', 0
+  szLblHkSnip           du 'Ножницы (снимок):', 0
   szKeyF5               du 'F5', 0
   szKeyF6               du 'F6', 0
   szKeyF10              du 'F10', 0
   szKeyF11              du 'F11', 0
+  szKeyShiftF11         du 'Shift+F11', 0
 
   ; --------------------------------------------------------------------------
   ; Formats & Output Paths
@@ -137,6 +141,7 @@ section '.data' data readable writeable
   fmtSizeMb             du '%u.%02u MB', 0
   fmtTelemetrySize      du 'Размер: %s', 0
   fmtRegionSummary      du '%u × %u', 0
+  fmtSnipBadgeDim       du '%u × %u (в буфер)', 0
   fmtDateTime           du '%04u-%02u-%02u %02u:%02u', 0
 
   szRecSubDir           du 'recordings', 0
@@ -168,6 +173,9 @@ section '.data' data readable writeable
   szStatusPausedMsg     du 'Запись на паузе', 0
   szStatusRecSavedMsg   du 'Запись сохранена: %s (%u KB, %u кадров)', 0
   szStatusShotSavedMsg  du 'Снимок экрана сохранён: %s (%u KB)', 0
+  szStatusSnipSavedMsg  du 'Фрагмент скопирован в буфер обмена и сохранён: %s', 0
+  szStatusCopiedToClipboard du 'Снимок скопирован в буфер обмена (Ctrl+V)!', 0
+  szStatusCopyError     du 'Ошибка копирования: выберите файл снимка (.bmp)', 0
   szStatusDeletedMsg    du 'Файл удалён: %s', 0
   szStatusNoFileSelMsg  du 'Выберите файл из списка для открытия или удаления', 0
 

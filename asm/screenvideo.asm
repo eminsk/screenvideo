@@ -178,6 +178,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     mov [audioMicEnabled], 0
     mov [isCustomRegion], 0
     mov [gal_filterMode], IDC_FILTER_ALL
+    mov [copyToClipboard], 1
+    mov [regionSelectorMode], REGION_MODE_RECORD
 
     ; Build Dark Modern UI Subsystems
     call CreateFontsAndBrushes
@@ -192,11 +194,12 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     call UpdateUIState
     call RefreshGalleryList
 
-    ; Register Global System Hotkeys (F5, F6, F10, F11)
+    ; Register Global System Hotkeys (F5, F6, F10, F11, Shift+F11)
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_START, 0, VK_F5
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_PAUSE, 0, VK_F6
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_STOP, 0, VK_F10
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_SCREENSHOT, 0, VK_F11
+    invoke RegisterHotKey, [hWndMain], ID_HOTKEY_SNIP, MOD_SHIFT, VK_F11
 
     xor eax, eax
     ret
@@ -338,6 +341,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     ; Target Selection
     cmp eax, IDC_BTN_SELECT_REGION
     je .cmd_select_region
+    cmp eax, IDC_BTN_SNIP_REGION
+    je .cmd_snip_region
     cmp eax, IDC_BTN_FULLSCREEN
     je .cmd_reset_fullscreen
 
@@ -364,6 +369,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     je .cmd_play
     cmp eax, IDC_BTN_OPEN_FOLDER
     je .cmd_open_folder
+    cmp eax, IDC_BTN_COPY_CLIPBOARD
+    je .cmd_copy_clipboard
     cmp eax, IDC_BTN_OPEN_REC_DIR
     je .cmd_open_rec_dir
     cmp eax, IDC_BTN_REFRESH
@@ -423,7 +430,12 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     ret
 
 .cmd_select_region:
-    call ShowRegionSelector
+    call StartSelectRecordRegion
+    xor eax, eax
+    ret
+
+.cmd_snip_region:
+    call StartInteractiveSnip
     xor eax, eax
     ret
 
@@ -487,6 +499,11 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     xor eax, eax
     ret
 
+.cmd_copy_clipboard:
+    call CopySelectedGalleryItemToClipboard
+    xor eax, eax
+    ret
+
 .cmd_open_rec_dir:
     invoke ShellExecuteW, [hWndMain], addr szShellOpen, addr szRecDir, NULL, NULL, 1
     xor eax, eax
@@ -546,18 +563,34 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     ret
 
 ; ----------------------------------------------------------------------------
-; WM_NOTIFY - Double-click on Gallery item opens file
+; WM_NOTIFY - Double-click opens file, Ctrl+C copies to clipboard
 ; ----------------------------------------------------------------------------
 .on_notify:
     mov rax, r9 ; NMHDR*
     test rax, rax
     jz .notify_done
     cmp dword [rax+16], NM_DBLCLK
-    jne .notify_done
+    jne .check_lv_key
     mov rcx, [rax]
     cmp rcx, [hListGallery]
     jne .notify_done
     call OpenSelectedGalleryItem
+    jmp .notify_done
+
+.check_lv_key:
+    cmp dword [rax+16], LVN_KEYDOWN
+    jne .notify_done
+    mov rcx, [rax]
+    cmp rcx, [hListGallery]
+    jne .notify_done
+    movzx edx, word [rax+24] ; wVKey in NMLVKEYDOWN
+    cmp edx, 'C'
+    jne .notify_done
+    invoke GetKeyState, 0x11 ; VK_CONTROL
+    test ax, 0x8000
+    jz .notify_done
+    call CopySelectedGalleryItemToClipboard
+
 .notify_done:
     xor eax, eax
     ret
@@ -574,6 +607,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     je .hk_stop
     cmp r8d, ID_HOTKEY_SCREENSHOT
     je .hk_shot
+    cmp r8d, ID_HOTKEY_SNIP
+    je .hk_snip
     xor eax, eax
     ret
 
@@ -594,6 +629,11 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
 
 .hk_shot:
     call TakeInstantScreenshot
+    xor eax, eax
+    ret
+
+.hk_snip:
+    call StartInteractiveSnip
     xor eax, eax
     ret
 
@@ -620,6 +660,7 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_PAUSE
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_STOP
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_SCREENSHOT
+    invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_SNIP
 
     ; Terminate recording if still running
     cmp [recState], STATE_IDLE
