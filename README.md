@@ -130,7 +130,7 @@ build.bat
 **ScreenCapture Pro** is maintained by **[@eminsk](https://github.com/eminsk)** as part of an active suite of systems engineering and quantitative open-source projects:
 
 ### Maintained Projects
-* **[agentjit](https://github.com/eminsk/agentjit)** — Just-In-Time Compiler for AI Agent Trajectories compiling workflows into 0.08ms Python code.
+* **[agentjit](https://github.com/eminsk/agentjit)** — Just-In-Time Compiler for AI Agent Trajectories compiling workflows into 0.08ms Python code (Featured as #1 Top Story in The Daily Diff).
 * **[nanorecall](https://github.com/eminsk/nanorecall)** — 100% Private, Zero-Cloud desktop screen and memory search engine in <200KB.
 * **[nanovector](https://github.com/eminsk/nanovector)** — Ultra-compact SQLite of vector search in ~120KB with AVX2+FMA and hand-crafted FASM x64 kernels.
 * **[nanogemm](https://github.com/eminsk/nanogemm)** — Minimalist, bare-metal SIMD & Assembly GEMM engine for Python. Sub-microsecond CPU matrix multiplication for AI & scientific computing (2.8x faster than NumPy on small tensors).
