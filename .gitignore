@@ -26,3 +26,11 @@ config.json
 # Lock file (optional, remove if you want to commit it)
 uv.lock
 
+# Test and temporary artifacts
+.coverage
+*.html
+*.whl
+*.tar.gz
+strategies/
+*_readme.txt
+scratch/

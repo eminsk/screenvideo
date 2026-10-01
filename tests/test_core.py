@@ -291,6 +291,74 @@ class TestScreenCapturePro(unittest.TestCase):
         self.assertTrue(gif_out.exists())
         self.assertGreater(gif_out.stat().st_size, 100)
 
+    def test_clipboard_copy_frame(self) -> None:
+        """Test copying a numpy image frame to clipboard."""
+        from src.core.clipboard import copy_frame_to_clipboard
+
+        # Empty or None frame should fail gracefully
+        self.assertFalse(copy_frame_to_clipboard(None))
+        self.assertFalse(copy_frame_to_clipboard(np.array([])))
+
+        # Valid frame
+        frame = np.full((80, 80, 3), 128, dtype=np.uint8)
+        result = copy_frame_to_clipboard(frame)
+        self.assertTrue(result)
+
+    def test_clipboard_copy_file(self) -> None:
+        """Test copying an image file to clipboard."""
+        import cv2
+        from src.core.clipboard import copy_image_file_to_clipboard
+
+        # Non-existent file
+        self.assertFalse(copy_image_file_to_clipboard(self.temp_dir / "non_existent.png"))
+
+        # Valid image file
+        img_path = self.temp_dir / "test_copy.png"
+        dummy_img = np.zeros((100, 100, 3), dtype=np.uint8)
+        cv2.imwrite(str(img_path), dummy_img)
+        self.assertTrue(img_path.exists())
+
+        result = copy_image_file_to_clipboard(img_path)
+        self.assertTrue(result)
+
+    def test_screenshot_copy_to_clipboard(self) -> None:
+        """Test capture_screenshot with copy_to_clipboard flag."""
+        region = Region(x=0, y=0, width=120, height=120)
+
+        # With copy_to_clipboard=True
+        snap_path_1 = capture_screenshot(
+            region=region,
+            output_dir=self.snap_dir,
+            include_cursor=False,
+            copy_to_clipboard=True,
+        )
+        self.assertTrue(snap_path_1.exists())
+
+        # With copy_to_clipboard=False
+        snap_path_2 = capture_screenshot(
+            region=region,
+            output_dir=self.snap_dir,
+            include_cursor=False,
+            copy_to_clipboard=False,
+        )
+        self.assertTrue(snap_path_2.exists())
+
+    def test_config_clipboard_and_snip_hotkey(self) -> None:
+        """Test clipboard and snipping configuration fields and defaults."""
+        config = AppConfig(
+            recordings_dir=self.rec_dir,
+            screenshots_dir=self.snap_dir,
+        )
+        # Check defaults
+        self.assertTrue(config.copy_to_clipboard)
+        self.assertEqual(config.hotkey_snip, "shift+f11")
+
+        # Check modifications
+        config.copy_to_clipboard = False
+        config.hotkey_snip = "ctrl+alt+s"
+        self.assertFalse(config.copy_to_clipboard)
+        self.assertEqual(config.hotkey_snip, "ctrl+alt+s")
+
 
 if __name__ == "__main__":
     unittest.main()

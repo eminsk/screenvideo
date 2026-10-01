@@ -36,11 +36,15 @@ class AppConfig:
     minimize_on_record: bool = True
     sound_effects: bool = True
 
+    # Screenshots & Clipboard
+    copy_to_clipboard: bool = True
+
     # Hotkeys
     hotkey_start: str = "f5"
     hotkey_pause: str = "f6"
     hotkey_stop: str = "f10"
     hotkey_screenshot: str = "f11"
+    hotkey_snip: str = "shift+f11"
 
     # UI Theme
     theme: str = "darkly"

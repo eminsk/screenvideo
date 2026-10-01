@@ -118,6 +118,9 @@ class ScreenCaptureApp:
         self._hotkeys.register(
             "screenshot", self.config.hotkey_screenshot, self.take_instant_screenshot
         )
+        self._hotkeys.register(
+            "snip", getattr(self.config, "hotkey_snip", "shift+f11"), self.snip_region_screenshot
+        )
 
     def apply_theme(self, theme_name: str) -> None:
         """Apply ttkbootstrap theme in real time."""
@@ -264,11 +267,49 @@ class ScreenCaptureApp:
                 monitor_index=mon_idx,
                 include_cursor=self.config.record_cursor,
                 highlight_cursor=self.config.highlight_cursor,
+                copy_to_clipboard=self.config.copy_to_clipboard,
             )
             self.history_view.refresh_list()
-            self._status_var.set(f"Снимок сохранён: {saved_path.name}")
+            msg = f"📸 Снимок сохранён: {saved_path.name}"
+            if self.config.copy_to_clipboard:
+                msg += " (скопирован в буфер)"
+            self._status_var.set(msg)
         except Exception as e:
             self._status_var.set(f"Ошибка сохранения снимка: {e}")
+
+    def snip_region_screenshot(self) -> None:
+        """Launch interactive region selector for instant snipping to clipboard and file."""
+        self.root.withdraw()
+        self.root.after(150, self._show_snip_overlay)
+
+    def _show_snip_overlay(self) -> None:
+        """Display snipping overlay and process captured region."""
+        def _on_snip_done(region: Region | None) -> None:
+            self.restore_window()
+            if region and region.is_valid:
+                try:
+                    saved_path = capture_screenshot(
+                        region=region,
+                        output_dir=self.config.screenshots_dir,
+                        monitor_index=self.config.monitor_index,
+                        include_cursor=self.config.record_cursor,
+                        highlight_cursor=self.config.highlight_cursor,
+                        copy_to_clipboard=self.config.copy_to_clipboard,
+                    )
+                    self.history_view.refresh_list()
+                    if self.config.sound_effects:
+                        play_sound_feedback("screenshot")
+                    msg = f"✂ Снимок области: {saved_path.name}"
+                    if self.config.copy_to_clipboard:
+                        msg += " (скопирован в буфер обмена)"
+                    self._status_var.set(msg)
+                except Exception as e:
+                    self._status_var.set(f"Ошибка сохранения снимка области: {e}")
+            else:
+                self._status_var.set("Выделение области отменено")
+
+        selector = RegionSelector(self.root, _on_snip_done, mode="snip")
+        selector.show()
 
     def restore_window(self) -> None:
         """Restore and focus main window."""

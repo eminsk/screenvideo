@@ -14,7 +14,8 @@
 ## ✨ Key Features
 
 - 🖥️ **Full-Screen & Multi-Monitor Support**: Seamless recording across single displays, multi-monitor setups, or virtual desktop workspaces.
-- ✂️ **Interactive Region Selector (Snipping Tool)**: Real-time visual region selection with darkened overlay, pixel dimensions, and aspect ratio guides (16:9, 4:3, 1:1).
+- ✂️ **Interactive Region Selector & Snipping Tool**: Real-time visual region selection with darkened overlay, pixel dimensions HUD, aspect ratio guides, and dedicated snipping mode (`Shift+F11`).
+- 📋 **Native Windows Clipboard Integration (`CF_DIB`)**: Instantly auto-copies snips and screenshots directly to the system clipboard for immediate `Ctrl+V` paste into Telegram, Discord, Slack, Word, or browsers. Includes 1-click "В буфер" and `Ctrl+C` in the gallery.
 - 🔊 **System Audio Capture (WASAPI Loopback)**: Crystal-clear internal sound recording capturing speakers and headphones without external virtual cables.
 - 🎤 **Microphone & Multi-Source Audio**: Record voice commentary independently or mixed synchronously with system audio.
 - 💾 **Zero-Memory Direct-to-Disk Streaming**: Frames are encoded directly to disk via OpenCV/native pipes without ballooning RAM usage.
@@ -25,7 +26,7 @@
 - 📸 **Instant High-Res Screenshots**: Capture fullscreen or region PNG snapshots in one keystroke (`F11`).
 - 🎛️ **Floating Mini-Toolbar Widget**: Compact, draggable on-screen controller during active recording with live duration timer and quick-action buttons.
 - ⏱️ **Animated Countdown (3.. 2.. 1..)**: Clean pre-recording visual countdown overlay.
-- 📁 **Integrated Media Gallery & Manager**: In-app viewer for recorded videos, GIFs, and screenshots, instant playback in default media player, folder reveal, and 1-click GIF conversion.
+- 📁 **Integrated Media Gallery & Manager**: In-app viewer for recorded videos, GIFs, and screenshots, instant playback in default media player, folder reveal, clipboard copying (`Ctrl+C`), and 1-click GIF conversion.
 - 🎨 **Modern Themed Interface**: Customizable dark and light palettes powered by `ttkbootstrap` (Darkly, Superhero, Solar, Cyborg, Cosmo, Flatly, Minty).
 - ⚙️ **Configurable Encoding**: Adjustable framerates (15, 24, 30, 60 FPS), audio bitrates (128k–320k), container formats (MP4, AVI, MKV, GIF), and custom hotkeys.
 
@@ -38,7 +39,8 @@
 | **`F5`** | **Start Recording** | Begins screen capture (with animated 3..2..1 countdown) |
 | **`F6`** | **Pause / Resume** | Instantly toggles recording state without dropping sync |
 | **`F10`** | **Stop & Save** | Concludes capture, finalizes file headers, and opens gallery |
-| **`F11`** | **Screenshot** | Captures active display/region to PNG immediately |
+| **`F11`** | **Quick Screenshot** | Captures active display/region to PNG immediately |
+| **`Shift+F11`** | **Interactive Snip** | Interactive region snipping with crosshair & instant clipboard copy |
 | **`ESC`** | **Cancel** | Exits region selection overlay |
 
 *(All hotkeys are rebindable in the Settings tab)*
@@ -51,6 +53,7 @@
 screenvideo/
 ├── src/
 │   ├── core/                  # Core engine independent of UI
+│   │   ├── clipboard.py       # Native Win32 CF_DIB clipboard integration
 │   │   ├── config.py          # Persistent JSON settings & state
 │   │   ├── cursor.py          # Fast pointer capture & halo renderer
 │   │   ├── gif.py             # 2-pass animated GIF palette generator

@@ -120,6 +120,8 @@ class HistoryView(ttk.Frame):
         scrollbar.pack(side=RIGHT, fill="y")
 
         self._tree.bind("<Double-1>", lambda e: self._on_play_selected())
+        self._tree.bind("<Control-c>", lambda e: self._on_copy_selected())
+        self._tree.bind("<Control-C>", lambda e: self._on_copy_selected())
 
         # Bottom Action Buttons
         actions_bar = ttk.Frame(self)
@@ -132,6 +134,14 @@ class HistoryView(ttk.Frame):
             command=self._on_play_selected,
         )
         btn_play.pack(side=LEFT, padx=3)
+
+        btn_copy = ttk.Button(
+            actions_bar,
+            text="📋 В буфер",
+            bootstyle="info",
+            command=self._on_copy_selected,
+        )
+        btn_copy.pack(side=LEFT, padx=3)
 
         btn_reveal = ttk.Button(
             actions_bar,
@@ -212,6 +222,32 @@ class HistoryView(ttk.Frame):
         item = self._get_selected_item()
         if item:
             open_in_default_app(item.path)
+
+    def _on_copy_selected(self) -> None:
+        """Copy selected screenshot image or video file path to clipboard."""
+        item = self._get_selected_item()
+        if not item:
+            msgbox.showinfo(
+                "Буфер обмена", "Пожалуйста, выберите файл в списке для копирования.", parent=self
+            )
+            return
+
+        if item.file_type == "image":
+            from src.core.clipboard import copy_image_file_to_clipboard
+
+            success = copy_image_file_to_clipboard(item.path)
+            if success:
+                self._app._status_var.set(f"Снимок скопирован в буфер: {item.filename}")
+                if self._app.config.sound_effects:
+                    play_sound_feedback("screenshot")
+            else:
+                msgbox.showwarning(
+                    "Ошибка", "Не удалось скопировать изображение в буфер обмена.", parent=self
+                )
+        else:
+            self.clipboard_clear()
+            self.clipboard_append(str(item.path.resolve()))
+            self._app._status_var.set(f"Путь к видео скопирован: {item.filename}")
 
     def _on_reveal_selected(self) -> None:
         item = self._get_selected_item()

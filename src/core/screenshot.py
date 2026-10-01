@@ -9,6 +9,7 @@ import cv2
 import mss
 import numpy as np
 
+from src.core.clipboard import copy_frame_to_clipboard
 from src.core.cursor import CursorRenderer
 from src.core.monitors import Region
 
@@ -20,9 +21,10 @@ def capture_screenshot(
     monitor_index: int = 1,
     include_cursor: bool = True,
     highlight_cursor: bool = False,
+    copy_to_clipboard: bool = True,
 ) -> Path:
     """
-    Capture instant screenshot to PNG file.
+    Capture instant screenshot to PNG file and optionally copy to clipboard.
     Returns path to saved image file.
     """
     output_dir = Path(output_dir)
@@ -57,5 +59,11 @@ def capture_screenshot(
             )
 
         cv2.imwrite(str(file_path), frame, [cv2.IMWRITE_PNG_COMPRESSION, 4])
+
+        if copy_to_clipboard:
+            try:
+                copy_frame_to_clipboard(frame)
+            except Exception:
+                pass
 
     return file_path

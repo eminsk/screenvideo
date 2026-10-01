@@ -200,6 +200,14 @@ class SettingsView(ttk.Frame):
             row=3, column=1, sticky="w", padx=10, pady=3
         )
 
+        ttk.Label(grid_k, text="Снимок области (Snip):", font=Fonts.BODY).grid(
+            row=4, column=0, sticky="w", pady=3
+        )
+        self._var_k_snip = ttk.StringVar()
+        ttk.Entry(grid_k, textvariable=self._var_k_snip, width=12).grid(
+            row=4, column=1, sticky="w", padx=10, pady=3
+        )
+
         # 4. Appearance & Behavior Card
         card_ui = ttk.Labelframe(scrollable_frame, text=" Оформление и поведение ", padding=12)
         card_ui.pack(fill=X, pady=(0, 10))
@@ -216,6 +224,14 @@ class SettingsView(ttk.Frame):
         )
         self._combo_theme.pack(side=LEFT)
         self._combo_theme.bind("<<ComboboxSelected>>", self._on_theme_preview)
+
+        self._var_copy_clipboard = ttk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            card_ui,
+            text="Автоматически копировать снимки в буфер обмена (Ctrl+V)",
+            variable=self._var_copy_clipboard,
+            bootstyle="round-toggle",
+        ).pack(anchor="w", pady=2)
 
         self._var_minimize = ttk.BooleanVar(value=True)
         ttk.Checkbutton(
@@ -284,6 +300,8 @@ class SettingsView(ttk.Frame):
         self._var_k_pause.set(cfg.hotkey_pause)
         self._var_k_stop.set(cfg.hotkey_stop)
         self._var_k_snap.set(cfg.hotkey_screenshot)
+        self._var_k_snip.set(getattr(cfg, "hotkey_snip", "shift+f11"))
+        self._var_copy_clipboard.set(getattr(cfg, "copy_to_clipboard", True))
         self._var_minimize.set(cfg.minimize_on_record)
         self._var_highlight.set(getattr(cfg, "highlight_cursor", True))
         self._var_clicks.set(getattr(cfg, "visualize_clicks", True))
@@ -335,6 +353,8 @@ class SettingsView(ttk.Frame):
         cfg.hotkey_pause = self._var_k_pause.get().strip().lower()
         cfg.hotkey_stop = self._var_k_stop.get().strip().lower()
         cfg.hotkey_screenshot = self._var_k_snap.get().strip().lower()
+        cfg.hotkey_snip = self._var_k_snip.get().strip().lower()
+        cfg.copy_to_clipboard = self._var_copy_clipboard.get()
 
         cfg.minimize_on_record = self._var_minimize.get()
         cfg.highlight_cursor = self._var_highlight.get()

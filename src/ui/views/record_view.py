@@ -221,6 +221,15 @@ class RecordView(ttk.Frame):
         )
         self._btn_screenshot.pack(side=LEFT, padx=2)
 
+        snip_k = getattr(self._app.config, "hotkey_snip", "SHIFT+F11").upper()
+        self._btn_snip = ttk.Button(
+            actions_row,
+            text=f"✂ ВЫДЕЛЕНИЕ ({snip_k})",
+            bootstyle="info",
+            command=self._app.snip_region_screenshot,
+        )
+        self._btn_snip.pack(side=LEFT, padx=2)
+
     def refresh_monitors(self) -> None:
         """Detect monitors and populate dropdown."""
         self._monitors = get_available_monitors()
@@ -319,3 +328,5 @@ class RecordView(ttk.Frame):
         self._btn_screenshot.configure(
             text=f"📸 СНИМОК ({self._app.config.hotkey_screenshot.upper()})"
         )
+        snip_k = getattr(self._app.config, "hotkey_snip", "SHIFT+F11").upper()
+        self._btn_snip.configure(text=f"✂ ВЫДЕЛЕНИЕ ({snip_k})")
