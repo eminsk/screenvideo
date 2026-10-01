@@ -130,17 +130,21 @@ build.bat
 **ScreenCapture Pro** is maintained by **[@eminsk](https://github.com/eminsk)** as part of an active suite of systems engineering and quantitative open-source projects:
 
 ### Maintained Projects
+* **[agentjit](https://github.com/eminsk/agentjit)** — Just-In-Time Compiler for AI Agent Trajectories compiling workflows into 0.08ms Python code.
+* **[nanorecall](https://github.com/eminsk/nanorecall)** — 100% Private, Zero-Cloud desktop screen and memory search engine in <200KB.
+* **[nanovector](https://github.com/eminsk/nanovector)** — Ultra-compact SQLite of vector search in ~120KB with AVX2+FMA and hand-crafted FASM x64 kernels.
 * **[nanogemm](https://github.com/eminsk/nanogemm)** — Minimalist, bare-metal SIMD & Assembly GEMM engine for Python. Sub-microsecond CPU matrix multiplication for AI & scientific computing (2.8x faster than NumPy on small tensors).
-* **[yfinance-ta-patterns](https://github.com/eminsk/yfinance-ta-patterns)** (v0.2.0) — Technical analysis candlestick scanner powered by TA-Lib with quantitative AI confluence scoring, automated trade setups, and 37 automated CI tests on Python 3.12–3.14.
-* **[xlsx_vievers](https://github.com/eminsk/xlsx_vievers)** — Desktop spreadsheet processor featuring 80+ formula functions, Chart Wizard, AutoFilter, Conditional Formatting, and hardware-accelerated SIMD SSE2 math engine with full automated CI coverage.
+* **[xlsx_vievers](https://github.com/eminsk/xlsx_vievers)** — Desktop spreadsheet processor featuring 80+ formula functions, Chart Wizard, AutoFilter, Conditional Formatting, and SIMD SSE2 math engine with PyPI and conda-forge packaging.
+* **[yfinance-ta-patterns](https://github.com/eminsk/yfinance-ta-patterns)** — Technical analysis candlestick scanner powered by TA-Lib with quantitative AI confluence scoring, automated trade setups, and 37 automated CI tests on Python 3.12–3.15.
 * **[StackOverflowAPI](https://github.com/eminsk/StackOverflowAPI)** — Modern bilingual desktop reference and search client for Stack Overflow with native x64 FASM and CustomTkinter editions.
 
 ### Community Open Source Contributions
+* **[conda-forge/staged-recipes](https://github.com/conda-forge/staged-recipes)** (850+ ⭐) — [PR #34899 (Merged)](https://github.com/conda-forge/staged-recipes/pull/34899): Added official Conda feedstock recipe for `xlsx-viewer-pro` & active feedstock submissions.
+* **[Duff89/parser_avito](https://github.com/Duff89/parser_avito)** (750+ ⭐) — [PR #331 (Merged)](https://github.com/Duff89/parser_avito/pull/331), [PR #329 (Merged)](https://github.com/Duff89/parser_avito/pull/329), [PR #328 (Merged)](https://github.com/Duff89/parser_avito/pull/328), [PR #327 (Merged)](https://github.com/Duff89/parser_avito/pull/327), [PR #337 (Active)](https://github.com/Duff89/parser_avito/pull/337), [PR #334 (Active)](https://github.com/Duff89/parser_avito/pull/334).
 * **[xtekky/gpt4free](https://github.com/xtekky/gpt4free)** (65k+ ⭐) — [PR #3514 (Merged)](https://github.com/xtekky/gpt4free/pull/3514): Fixed unhandled `AttributeError` on session token in Copilot provider.
-* **[flet-dev/flet](https://github.com/flet-dev/flet)** (11k+ ⭐) — [PR #6817](https://github.com/flet-dev/flet/pull/6817): Fixed Windows build crash on directory cleanup permissions.
+* **[flet-dev/flet](https://github.com/flet-dev/flet)** (11k+ ⭐) — [PR #6817 (Merged)](https://github.com/flet-dev/flet/pull/6817): Fixed Windows build crash on directory cleanup permissions.
+* **[sqlfluff/sqlfluff](https://github.com/sqlfluff/sqlfluff)** (8.5k+ ⭐) — [PR #8449 (Merged)](https://github.com/sqlfluff/sqlfluff/pull/8449): MySQL-family `CONVERT(expr, type)` parser and rule support.
 * **[Textualize/rich](https://github.com/Textualize/rich)** (49k+ ⭐) & **[textual](https://github.com/Textualize/textual)** (26k+ ⭐) — Terminal rendering and selection edge-case fixes.
-* **[sqlfluff/sqlfluff](https://github.com/sqlfluff/sqlfluff)** — [PR #6823](https://github.com/sqlfluff/sqlfluff/pull/6823): MySQL JSON column validation rule and cross-platform CI tests.
-* **[Duff89/parser_avito](https://github.com/Duff89/parser_avito)** — [PR #327](https://github.com/Duff89/parser_avito/pull/327) / [PR #121](https://github.com/Duff89/parser_avito/pull/121): Data export and UI concurrency fixes.
 
 ---
 
