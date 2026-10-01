@@ -1,17 +1,18 @@
-﻿name: Build and Release
+name: Build and Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-release:
+  build-windows:
+    name: Build Windows Binaries
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -19,12 +20,117 @@ jobs:
         shell: cmd
         run: |
           cd asm
-          FASM.EXE screenvideo.asm ScreenCapturePro.exe
+          FASM.EXE screenvideo.asm ScreenCapturePro-Windows-FASM.exe
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          files: asm/ScreenCapturePro.exe
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build Standalone Windows Executable with PyInstaller
+        run: |
+          uv run --with pyinstaller pyinstaller --noconfirm --onefile --windowed --name ScreenCapturePro-Windows-x64 --collect-data ttkbootstrap main.py
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            asm/ScreenCapturePro-Windows-FASM.exe
+            dist/ScreenCapturePro-Windows-x64.exe
+
+  build-linux:
+    name: Build Linux Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk libgl1 libglib2.0-0 libasound2-dev libportaudio2 libx11-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build Linux Standalone Binary with PyInstaller
+        run: |
+          uv run --with pyinstaller pyinstaller --noconfirm --onefile --windowed --name ScreenCapturePro-Linux-x64 --collect-data ttkbootstrap main.py
+          cd dist
+          tar -czvf ../ScreenCapturePro-Linux-x64.tar.gz ScreenCapturePro-Linux-x64
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: ScreenCapturePro-Linux-x64.tar.gz
+
+  build-macos:
+    name: Build macOS (Apple) Binaries
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build macOS App Bundle with PyInstaller
+        run: |
+          uv run --with pyinstaller pyinstaller --noconfirm --onedir --windowed --name ScreenCapturePro --collect-data ttkbootstrap main.py
+          cd dist
+          zip -r ../ScreenCapturePro-macOS-AppleSilicon.zip ScreenCapturePro.app
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: ScreenCapturePro-macOS-AppleSilicon.zip
+
+  publish-release:
+    name: Publish Multiplatform Release
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: List Release Files
+        run: ls -la release-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            release-artifacts/ScreenCapturePro-Windows-FASM.exe
+            release-artifacts/ScreenCapturePro-Windows-x64.exe
+            release-artifacts/ScreenCapturePro-Linux-x64.tar.gz
+            release-artifacts/ScreenCapturePro-macOS-AppleSilicon.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
