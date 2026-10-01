@@ -34,16 +34,18 @@ jobs:
         run: uv sync
 
       - name: Build Standalone Windows Executable with PyInstaller
+        shell: cmd
         run: |
           uv run --with pyinstaller pyinstaller --noconfirm --onefile --windowed --name ScreenCapturePro-Windows-x64 --collect-data ttkbootstrap main.py
+          mkdir release-win
+          copy asm\ScreenCapturePro-Windows-FASM.exe release-win\
+          copy dist\ScreenCapturePro-Windows-x64.exe release-win\
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          path: |
-            asm/ScreenCapturePro-Windows-FASM.exe
-            dist/ScreenCapturePro-Windows-x64.exe
+          path: release-win/*
 
   build-linux:
     name: Build Linux Binaries
@@ -120,17 +122,17 @@ jobs:
           merge-multiple: true
 
       - name: List Release Files
-        run: ls -la release-artifacts
+        run: find release-artifacts -type f
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            release-artifacts/ScreenCapturePro-Windows-FASM.exe
-            release-artifacts/ScreenCapturePro-Windows-x64.exe
-            release-artifacts/ScreenCapturePro-Linux-x64.tar.gz
-            release-artifacts/ScreenCapturePro-macOS-AppleSilicon.zip
+            release-artifacts/**/ScreenCapturePro-Windows-FASM.exe
+            release-artifacts/**/ScreenCapturePro-Windows-x64.exe
+            release-artifacts/**/ScreenCapturePro-Linux-x64.tar.gz
+            release-artifacts/**/ScreenCapturePro-macOS-AppleSilicon.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
