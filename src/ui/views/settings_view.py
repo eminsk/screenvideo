@@ -80,7 +80,9 @@ class SettingsView(ttk.Frame):
         # Screenshot format selection
         row_snap_fmt = ttk.Frame(card_paths)
         row_snap_fmt.pack(fill=X, pady=(6, 0))
-        ttk.Label(row_snap_fmt, text="Формат снимков:", font=Fonts.BODY).pack(side=LEFT, padx=(0, 8))
+        ttk.Label(row_snap_fmt, text="Формат снимков:", font=Fonts.BODY).pack(
+            side=LEFT, padx=(0, 8)
+        )
         self._var_snap_format = ttk.StringVar(value="png")
         self._combo_snap_format = ttk.Combobox(
             row_snap_fmt,

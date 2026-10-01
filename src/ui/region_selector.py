@@ -99,9 +99,7 @@ class RegionSelector:
             fill="#ffffff",
             font=Fonts.TITLE_SMALL,
         )
-        self._canvas.create_text(
-            cx, 63, text=sub_text, fill="#b0b0b0", font=Fonts.CAPTION
-        )
+        self._canvas.create_text(cx, 63, text=sub_text, fill="#b0b0b0", font=Fonts.CAPTION)
 
     def _on_right_click(self, event: tk.Event) -> None:
         """Right click triggers fullscreen selection or snip."""
@@ -174,7 +172,10 @@ class RegionSelector:
 
         # 3. Live dimensions HUD badge
         if width > 30 and height > 20:
-            hud_text = f"✂ {width} × {height} px (в буфер)" if self._mode == "snip" else f"🎬 {width} × {height} px"
+            if self._mode == "snip":
+                hud_text = f"✂ {width} × {height} px (в буфер)"
+            else:
+                hud_text = f"🎬 {width} × {height} px"
             hud_x = x1 + 10
             hud_y = y1 - 25 if y1 > 35 else y1 + 15
 

@@ -9,9 +9,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import cv2
 import mss
 import numpy as np
 
+from src.core.clipboard import copy_frame_to_clipboard, copy_image_file_to_clipboard
 from src.core.config import AppConfig
 from src.core.cursor import CursorRenderer
 from src.core.history import HistoryManager
@@ -319,8 +321,6 @@ class TestScreenCapturePro(unittest.TestCase):
 
     def test_clipboard_copy_frame(self) -> None:
         """Test copying a numpy image frame to clipboard."""
-        from src.core.clipboard import copy_frame_to_clipboard
-
         # Empty or None frame should fail gracefully
         self.assertFalse(copy_frame_to_clipboard(None))
         self.assertFalse(copy_frame_to_clipboard(np.array([])))
@@ -332,9 +332,6 @@ class TestScreenCapturePro(unittest.TestCase):
 
     def test_clipboard_copy_file(self) -> None:
         """Test copying an image file to clipboard."""
-        import cv2
-        from src.core.clipboard import copy_image_file_to_clipboard
-
         # Non-existent file
         self.assertFalse(copy_image_file_to_clipboard(self.temp_dir / "non_existent.png"))
 

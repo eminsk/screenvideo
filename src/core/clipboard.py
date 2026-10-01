@@ -5,13 +5,12 @@ from __future__ import annotations
 import io
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
 
-if TYPE_CHECKING:
-    from PIL import Image
+GMEM_MOVEABLE = 0x0002
+CF_DIB = 8
 
 
 def copy_frame_to_clipboard(frame: np.ndarray) -> bool:
@@ -72,9 +71,6 @@ def _copy_frame_win32_dib(frame: np.ndarray) -> bool:
     kernel32.GlobalFree.argtypes = [wintypes.HGLOBAL]
     kernel32.GlobalFree.restype = wintypes.HGLOBAL
 
-    GMEM_MOVEABLE = 0x0002
-    CF_DIB = 8
-
     # Encode to BMP format in memory
     success, encoded = cv2.imencode(".bmp", frame)
     if not success:
@@ -110,6 +106,7 @@ def _copy_frame_win32_dib(frame: np.ndarray) -> bool:
             clipboard_opened = True
             break
         import time
+
         time.sleep(0.02)
 
     if not clipboard_opened:

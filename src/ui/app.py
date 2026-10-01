@@ -288,6 +288,7 @@ class ScreenCaptureApp:
 
     def _show_snip_overlay(self) -> None:
         """Display snipping overlay and process captured region."""
+
         def _on_snip_done(region: Region | None) -> None:
             self.restore_window()
             if region and region.is_valid:

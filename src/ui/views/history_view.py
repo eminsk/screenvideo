@@ -10,7 +10,7 @@ from ttkbootstrap.constants import BOTH, LEFT, RIGHT, X
 
 from src.core.history import HistoryManager, MediaItem
 from src.ui.theme import Fonts
-from src.utils.system import open_in_default_app, reveal_in_explorer
+from src.utils.system import open_in_default_app, play_sound_feedback, reveal_in_explorer
 
 if TYPE_CHECKING:
     from src.ui.app import ScreenCaptureApp
