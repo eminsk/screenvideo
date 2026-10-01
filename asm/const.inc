@@ -22,6 +22,7 @@ ID_HOTKEY_PAUSE         = 102
 ID_HOTKEY_STOP          = 103
 ID_HOTKEY_SCREENSHOT    = 104
 ID_HOTKEY_SNIP          = 105
+ID_HOTKEY_REGION        = 106
 
 ; Modifiers for RegisterHotKey
 MOD_ALT                 = 0x0001
@@ -34,6 +35,7 @@ REGION_MODE_RECORD      = 0
 REGION_MODE_SNIP        = 1
 
 ; Virtual Key Codes
+VK_F2                   = 0x71
 VK_F5                   = 0x74
 VK_F6                   = 0x75
 VK_F10                  = 0x79
@@ -98,6 +100,12 @@ IDC_COMBO_CODEC         = 1307
 IDC_COMBO_AUDIO_BITRATE = 1308
 IDC_CHK_AUDIO_SYS2      = 1309
 IDC_CHK_AUDIO_MIC2      = 1310
+IDC_COMBO_SHOT_FMT      = 1311
+
+; Screenshot Format Constants
+SHOT_FMT_PNG            = 0
+SHOT_FMT_JPG            = 1
+SHOT_FMT_BMP            = 2
 
 ; Floating Mini-Toolbar Control IDs
 IDC_MINI_PAUSE          = 1401

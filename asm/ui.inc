@@ -440,6 +440,18 @@ proc CreateSettingsTabControls
     invoke SendMessageW, [hComboAudioBitrate], CB_ADDSTRING, 0, addr szBitrate192
     invoke SendMessageW, [hComboAudioBitrate], CB_SETCURSEL, 0, 0
 
+    ; Screenshot Format Combo (Card 2 right side)
+    invoke CreateWindowExW, 0, addr szComboClass, NULL,\
+           WS_CHILD or CBS_DROPDOWNLIST or WS_TABSTOP,\
+           360, 220, 144, 120, [hWndMain], IDC_COMBO_SHOT_FMT, [hInst], NULL
+    mov [hComboShotFormat], rax
+    invoke SendMessageW, [hComboShotFormat], WM_SETFONT, [hFontRegular], 1
+    invoke SetWindowTheme, [hComboShotFormat], addr szThemeCfd, NULL
+    invoke SendMessageW, [hComboShotFormat], CB_ADDSTRING, 0, addr szShotFmtPng
+    invoke SendMessageW, [hComboShotFormat], CB_ADDSTRING, 0, addr szShotFmtJpg
+    invoke SendMessageW, [hComboShotFormat], CB_ADDSTRING, 0, addr szShotFmtBmp
+    invoke SendMessageW, [hComboShotFormat], CB_SETCURSEL, 0, 0
+
     ret
 endp
 
@@ -550,33 +562,47 @@ proc PaintCustomBackgroundAndCards uses rbx rsi rdi
     fastcall DrawAutoText, rbx, 30, 194, addr szLblFps
     fastcall DrawAutoText, rbx, 30, 222, addr szLblContainer
     fastcall DrawAutoText, rbx, 30, 250, addr szLblCodec
+    fastcall DrawAutoText, rbx, 360, 194, addr szLblShotFormat
 
     fastcall DrawAutoText, rbx, 28, 288, addr szCardAudioTitle
     fastcall DrawAutoText, rbx, 30, 358, addr szLblBitrate
 
     fastcall DrawAutoText, rbx, 28, 386, addr szCardHotkeysTitle
-    fastcall DrawAutoText, rbx, 30, 404, addr szLblHkStart
-    fastcall DrawAutoText, rbx, 30, 424, addr szLblHkPause
-    fastcall DrawAutoText, rbx, 30, 444, addr szLblHkStop
-    fastcall DrawAutoText, rbx, 30, 464, addr szLblHkShot
-    fastcall DrawAutoText, rbx, 30, 484, addr szLblHkSnip
+
+    ; Column 1 (x=30)
+    fastcall DrawAutoText, rbx, 30, 408, addr szLblHkStart
+    fastcall DrawAutoText, rbx, 30, 438, addr szLblHkPause
+    fastcall DrawAutoText, rbx, 30, 468, addr szLblHkStop
+
+    ; Column 2 (x=260)
+    fastcall DrawAutoText, rbx, 260, 408, addr szLblHkShot
+    fastcall DrawAutoText, rbx, 260, 438, addr szLblHkSnip
+    fastcall DrawAutoText, rbx, 260, 468, addr szLblHkRegion
 
     ; Hotkey key badges
     invoke SelectObject, rbx, [hBrushBtnDark]
     invoke SelectObject, rbx, [hPenBorderLight]
-    invoke RoundRect, rbx, 160, 400, 220, 418, 4, 4
-    invoke RoundRect, rbx, 160, 420, 220, 438, 4, 4
-    invoke RoundRect, rbx, 160, 440, 220, 458, 4, 4
-    invoke RoundRect, rbx, 160, 460, 220, 478, 4, 4
-    invoke RoundRect, rbx, 160, 480, 240, 498, 4, 4
+
+    ; Column 1 Badges (x=160..220)
+    invoke RoundRect, rbx, 160, 404, 220, 424, 4, 4
+    invoke RoundRect, rbx, 160, 434, 220, 454, 4, 4
+    invoke RoundRect, rbx, 160, 464, 220, 484, 4, 4
+
+    ; Column 2 Badges
+    invoke RoundRect, rbx, 420, 404, 480, 424, 4, 4
+    invoke RoundRect, rbx, 396, 434, 480, 454, 4, 4
+    invoke RoundRect, rbx, 420, 464, 480, 484, 4, 4
 
     invoke SetTextColor, rbx, 0x00FFFFFF
     invoke SelectObject, rbx, [hFontBold]
-    fastcall DrawAutoText, rbx, 183, 401, addr szKeyF5
-    fastcall DrawAutoText, rbx, 183, 421, addr szKeyF6
-    fastcall DrawAutoText, rbx, 179, 441, addr szKeyF10
-    fastcall DrawAutoText, rbx, 179, 461, addr szKeyF11
-    fastcall DrawAutoText, rbx, 169, 481, addr szKeyShiftF11
+    ; Column 1 texts
+    fastcall DrawAutoText, rbx, 183, 406, addr szKeyF5
+    fastcall DrawAutoText, rbx, 183, 436, addr szKeyF6
+    fastcall DrawAutoText, rbx, 179, 466, addr szKeyF10
+    ; Column 2 texts
+    fastcall DrawAutoText, rbx, 439, 406, addr szKeyF11
+    fastcall DrawAutoText, rbx, 406, 436, addr szKeyShiftF11
+    fastcall DrawAutoText, rbx, 442, 466, addr szKeyF2
 
 .finish_paint:
     invoke EndPaint, [hWndMain], addr ps
@@ -1104,6 +1130,7 @@ proc SwitchTab uses rbx, nTab
     invoke ShowWindow, [hChkAudioSys2], ebx
     invoke ShowWindow, [hChkAudioMic2], ebx
     invoke ShowWindow, [hComboAudioBitrate], ebx
+    invoke ShowWindow, [hComboShotFormat], ebx
 
     ; If switching to gallery, refresh list
     cmp [currentTab], TAB_GALLERY

@@ -23,17 +23,19 @@ Designed as a bare-metal native counterpart to the Python edition of `ScreenCapt
   - Dark segmented tab switcher with active neon indicator.
   - High-precision digital timer rendered in Consolas 32pt.
 - **100% Native Wide Unicode (UTF-16)**: Full international character support via `INCLUDE\ENCODING\UTF8.INC` and Win32 `W` APIs (`CreateWindowExW`, `DrawTextW`, `SetWindowTextW`, `FindFirstFileW`, `CreateFileW`).
+- **📸 Настраиваемый формат скриншотов (PNG / JPG / BMP)**: Высококачественное сохранение снимков через встроенный Win32 GDI+ (`gdiplus.dll`) в PNG (без потерь), JPG (сжатый) и несжатый BMP без сторонних библиотек.
 - **📋 Native Windows Clipboard Integration (`CF_DIB`)**: Zero-overhead clipboard integration with pure Win32 API (`OpenClipboard`, `EmptyClipboard`, `SetClipboardData(CF_DIB, ...)`). Auto-copies all snapshots and snips for immediate `Ctrl+V` pasting into Telegram, Discord, Slack, Word, or browsers.
 - **✂️ Interactive Snipping Tool & HUD**:
   - Fullscreen translucent sniper overlay with crosshair cursor (`IDC_CROSS`).
   - Real-time bright desktop cutout and neon cyan highlight border (`#00B4E6`).
   - Real-time dimension HUD with `(в буфер)` indicator.
-  - Dedicated global hotkey (`Shift+F11`), right-click fullscreen snip, and `ESC` cancellation.
+  - Dedicated global hotkeys (`F2` для выделения области записи, `Shift+F11` для ножниц), right-click fullscreen snip, and `ESC` cancellation.
 - **Global Low-Level Hotkeys**:
+  - `F2` — Interactive record region selector (выбор области записи без мыши в UI).
   - `F5` — Start screen recording.
   - `F6` — Pause / Resume recording.
   - `F10` — Stop recording and finalize file headers.
-  - `F11` — Instant fullscreen or region screenshot (auto-copied to clipboard).
+  - `F11` — Instant fullscreen or region screenshot (PNG/JPG/BMP + auto-copy to clipboard).
   - `Shift+F11` — Interactive snipping tool (auto-copied to clipboard).
 - **Built-in Media Gallery & Catalog**:
   - Native list view table (`SysListView32`) with sorting, file types, human-readable sizes (KB / MB), and creation timestamps.
@@ -90,10 +92,11 @@ Compilation finishes in **~0.5 seconds** across 5 passes, producing an ultra-opt
 
 | Key / Control | Action |
 |---|---|
+| **`F2`** | Interactive Record Region Selector (быстрый выбор области записи) |
 | **`F5`** | Start screen recording |
 | **`F6`** | Pause / Resume recording |
 | **`F10`** | Stop recording and finalize video file |
-| **`F11`** | Instant screenshot (BMP + auto-copy to clipboard) |
+| **`F11`** | Instant screenshot (PNG / JPG / BMP + auto-copy to clipboard) |
 | **`Shift+F11`** | Interactive Snipping Tool (crosshair region selection + auto-copy) |
 | **`Right-Click` (Snip mode)** | Instant full-screen screenshot to clipboard |
 | **`ESC`** | Cancel active region selection |
@@ -101,8 +104,8 @@ Compilation finishes in **~0.5 seconds** across 5 passes, producing an ultra-opt
 | **Double-Click (Gallery)** | Open recorded video or screenshot in default Windows app |
 
 ### Output Storage Directories:
-- **Recordings:** `recordings\rec_YYYYMMDD_HHMMSS.avi`
-- **Screenshots:** `screenshots\shot_YYYYMMDD_HHMMSS.bmp`
+- **Recordings:** `recordings\rec_YYYYMMDD_HHMMSS.avi` / `recording_YYYYMMDD_HHMMSS.mp4`
+- **Screenshots:** `screenshots\shot_YYYYMMDD_HHMMSS.png` (или `.jpg`, `.bmp`)
 
 ---
 
@@ -116,11 +119,12 @@ This assembly edition is distributed under the **MIT License** as part of the Sc
 <summary><b>📖 Описание на русском языке (Нажмите, чтобы развернуть)</b></summary>
 
 ### Преимущества FASM x64 редакции:
-* **Экстремальный размер**: Исполняемый файл всего **~37 КБ** без Python, Electron и сторонних зависимостей.
-* **Чистый x64 Win32 API**: Прямая работа с `GDI32`, `USER32`, `AVIFIL32`, `DWMAPI`.
+* **Экстремальный размер**: Исполняемый файл без Python, Electron и сторонних зависимостей.
+* **Чистый x64 Win32 API**: Прямая работа с `GDI32`, `USER32`, `GDIPLUS`, `AVIFIL32`, `DWMAPI`.
 * **Тёмный современный интерфейс**: Кастомная отрисовка скругленных элементов, кнопок и карточек в тёмном стиле.
-* **Интерактивный селектор**: Выделение произвольной области экрана для записи или скриншота.
-* **Горячие клавиши**: `F5` — старт, `F6` — пауза, `F10` — стоп, `F11` — снимок, `ESC` — отмена.
-* **Встроенная галерея**: Менеджер записанных файлов и скриншотов с открытием в один клик.
+* **Настраиваемый формат скриншотов**: Выбор формата сохранения (PNG без потерь, JPG сжатый, BMP несжатый) прямо во вкладке Настройки.
+* **Интерактивный селектор**: Выделение произвольной области экрана для записи или фрагмента ножницами.
+* **Глобальные горячие клавиши**: `F2` — выбор области записи, `F5` — старт, `F6` — пауза, `F10` — стоп, `F11` — снимок, `Shift+F11` — ножницы, `ESC` — отмена.
+* **Встроенная галерея**: Менеджер записанных файлов и скриншотов с открытием в один клик и быстрым копированием в буфер обмена (`Ctrl+C`).
 
 </details>

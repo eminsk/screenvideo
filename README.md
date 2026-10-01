@@ -23,12 +23,13 @@
 - 🖱️ **Hardware Cursor Rendering & Halo Highlight**: Fast mouse pointer tracking with an optional translucent glowing halo for presentations and tutorials.
 - 🎯 **Mouse Click Ripple HUD**: Real-time visual animated ripple circles on left and right mouse clicks with customizable colors for software demos.
 - 🎞️ **Direct GIF Recording & 2-Pass Palette Exporter**: Create lightweight, crystal-clear animated GIFs using two-pass FFmpeg palette generation (`palettegen` + `paletteuse`), perfect for GitHub READMEs and bug reports.
-- 📸 **Instant High-Res Screenshots**: Capture fullscreen or region PNG snapshots in one keystroke (`F11`).
+- 📸 **Instant High-Res Screenshots & Configurable Formats**: Capture fullscreen or region snapshots in **PNG (lossless)**, **JPG (compact)**, or **BMP (uncompressed)** in one keystroke (`F11`).
+- 📐 **Instant Region Selection Hotkey (`F2`)**: Press `F2` from anywhere to trigger interactive region selection without touching the mouse on the UI.
 - 🎛️ **Floating Mini-Toolbar Widget**: Compact, draggable on-screen controller during active recording with live duration timer and quick-action buttons.
 - ⏱️ **Animated Countdown (3.. 2.. 1..)**: Clean pre-recording visual countdown overlay.
 - 📁 **Integrated Media Gallery & Manager**: In-app viewer for recorded videos, GIFs, and screenshots, instant playback in default media player, folder reveal, clipboard copying (`Ctrl+C`), and 1-click GIF conversion.
 - 🎨 **Modern Themed Interface**: Customizable dark and light palettes powered by `ttkbootstrap` (Darkly, Superhero, Solar, Cyborg, Cosmo, Flatly, Minty).
-- ⚙️ **Configurable Encoding**: Adjustable framerates (15, 24, 30, 60 FPS), audio bitrates (128k–320k), container formats (MP4, AVI, MKV, GIF), and custom hotkeys.
+- ⚙️ **Configurable Encoding**: Adjustable framerates (15, 24, 30, 60 FPS), screenshot formats (PNG, JPG, BMP), audio bitrates (128k–320k), container formats (MP4, AVI, MKV, GIF), and custom hotkeys.
 
 ---
 
@@ -36,10 +37,11 @@
 
 | Hotkey | Action | Description |
 | :--- | :--- | :--- |
+| **`F2`** | **Select Region** | Opens interactive region selection overlay directly |
 | **`F5`** | **Start Recording** | Begins screen capture (with animated 3..2..1 countdown) |
 | **`F6`** | **Pause / Resume** | Instantly toggles recording state without dropping sync |
 | **`F10`** | **Stop & Save** | Concludes capture, finalizes file headers, and opens gallery |
-| **`F11`** | **Quick Screenshot** | Captures active display/region to PNG immediately |
+| **`F11`** | **Quick Screenshot** | Captures active display/region to PNG/JPG/BMP immediately |
 | **`Shift+F11`** | **Interactive Snip** | Interactive region snipping with crosshair & instant clipboard copy |
 | **`ESC`** | **Cancel** | Exits region selection overlay |
 

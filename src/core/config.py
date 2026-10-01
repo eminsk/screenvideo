@@ -37,6 +37,7 @@ class AppConfig:
     sound_effects: bool = True
 
     # Screenshots & Clipboard
+    screenshot_format: str = "png"  # png, jpg, bmp
     copy_to_clipboard: bool = True
 
     # Hotkeys
@@ -45,6 +46,7 @@ class AppConfig:
     hotkey_stop: str = "f10"
     hotkey_screenshot: str = "f11"
     hotkey_snip: str = "shift+f11"
+    hotkey_region: str = "f2"
 
     # UI Theme
     theme: str = "darkly"

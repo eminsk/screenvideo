@@ -121,6 +121,9 @@ class ScreenCaptureApp:
         self._hotkeys.register(
             "snip", getattr(self.config, "hotkey_snip", "shift+f11"), self.snip_region_screenshot
         )
+        self._hotkeys.register(
+            "region", getattr(self.config, "hotkey_region", "f2"), self.on_open_region_selector
+        )
 
     def apply_theme(self, theme_name: str) -> None:
         """Apply ttkbootstrap theme in real time."""
@@ -268,6 +271,7 @@ class ScreenCaptureApp:
                 include_cursor=self.config.record_cursor,
                 highlight_cursor=self.config.highlight_cursor,
                 copy_to_clipboard=self.config.copy_to_clipboard,
+                format=getattr(self.config, "screenshot_format", "png"),
             )
             self.history_view.refresh_list()
             msg = f"📸 Снимок сохранён: {saved_path.name}"
@@ -295,6 +299,7 @@ class ScreenCaptureApp:
                         include_cursor=self.config.record_cursor,
                         highlight_cursor=self.config.highlight_cursor,
                         copy_to_clipboard=self.config.copy_to_clipboard,
+                        format=getattr(self.config, "screenshot_format", "png"),
                     )
                     self.history_view.refresh_list()
                     if self.config.sound_effects:

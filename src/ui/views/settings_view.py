@@ -77,6 +77,20 @@ class SettingsView(ttk.Frame):
             row_snap, text="Обзор...", bootstyle="secondary", command=self._browse_snap_dir
         ).pack(side=RIGHT)
 
+        # Screenshot format selection
+        row_snap_fmt = ttk.Frame(card_paths)
+        row_snap_fmt.pack(fill=X, pady=(6, 0))
+        ttk.Label(row_snap_fmt, text="Формат снимков:", font=Fonts.BODY).pack(side=LEFT, padx=(0, 8))
+        self._var_snap_format = ttk.StringVar(value="png")
+        self._combo_snap_format = ttk.Combobox(
+            row_snap_fmt,
+            textvariable=self._var_snap_format,
+            values=["png", "jpg", "bmp"],
+            state="readonly",
+            width=10,
+        )
+        self._combo_snap_format.pack(side=LEFT)
+
         # 2. Video Encoding Card
         card_video = ttk.Labelframe(
             scrollable_frame, text=" Настройки видео и частоты кадров ", padding=12
@@ -208,6 +222,14 @@ class SettingsView(ttk.Frame):
             row=4, column=1, sticky="w", padx=10, pady=3
         )
 
+        ttk.Label(grid_k, text="Выбор области записи:", font=Fonts.BODY).grid(
+            row=5, column=0, sticky="w", pady=3
+        )
+        self._var_k_region = ttk.StringVar()
+        ttk.Entry(grid_k, textvariable=self._var_k_region, width=12).grid(
+            row=5, column=1, sticky="w", padx=10, pady=3
+        )
+
         # 4. Appearance & Behavior Card
         card_ui = ttk.Labelframe(scrollable_frame, text=" Оформление и поведение ", padding=12)
         card_ui.pack(fill=X, pady=(0, 10))
@@ -290,6 +312,7 @@ class SettingsView(ttk.Frame):
         cfg = self._app.config
         self._var_rec_path.set(str(cfg.recordings_dir))
         self._var_snap_path.set(str(cfg.screenshots_dir))
+        self._var_snap_format.set(getattr(cfg, "screenshot_format", "png"))
         self._var_fps.set(str(cfg.fps))
         self._var_format.set(cfg.format)
         self._var_codec.set(cfg.codec)
@@ -301,6 +324,7 @@ class SettingsView(ttk.Frame):
         self._var_k_stop.set(cfg.hotkey_stop)
         self._var_k_snap.set(cfg.hotkey_screenshot)
         self._var_k_snip.set(getattr(cfg, "hotkey_snip", "shift+f11"))
+        self._var_k_region.set(getattr(cfg, "hotkey_region", "f2"))
         self._var_copy_clipboard.set(getattr(cfg, "copy_to_clipboard", True))
         self._var_minimize.set(cfg.minimize_on_record)
         self._var_highlight.set(getattr(cfg, "highlight_cursor", True))
@@ -336,6 +360,7 @@ class SettingsView(ttk.Frame):
 
         cfg.recordings_dir = Path(self._var_rec_path.get())
         cfg.screenshots_dir = Path(self._var_snap_path.get())
+        cfg.screenshot_format = self._var_snap_format.get().strip().lower()
 
         try:
             cfg.fps = int(self._var_fps.get())
@@ -354,6 +379,7 @@ class SettingsView(ttk.Frame):
         cfg.hotkey_stop = self._var_k_stop.get().strip().lower()
         cfg.hotkey_screenshot = self._var_k_snap.get().strip().lower()
         cfg.hotkey_snip = self._var_k_snip.get().strip().lower()
+        cfg.hotkey_region = self._var_k_region.get().strip().lower()
         cfg.copy_to_clipboard = self._var_copy_clipboard.get()
 
         cfg.minimize_on_record = self._var_minimize.get()

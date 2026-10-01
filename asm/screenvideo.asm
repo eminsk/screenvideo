@@ -35,6 +35,13 @@ start:
     ; Dynamic Path Resolution & Embedded Audio Auto-Extraction
     call InitializeAppDirectories
 
+    ; Initialize GDI+ Engine (for PNG and JPG export)
+    mov dword [gdiplusStartupInput], 1
+    mov qword [gdiplusStartupInput+8], 0
+    mov dword [gdiplusStartupInput+16], 0
+    mov dword [gdiplusStartupInput+20], 0
+    invoke GdiplusStartup, addr gdiplusToken, addr gdiplusStartupInput, NULL
+
     ; Retrieve Application Instance
     invoke GetModuleHandleW, NULL
     mov [hInst], rax
@@ -180,6 +187,7 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     mov [gal_filterMode], IDC_FILTER_ALL
     mov [copyToClipboard], 1
     mov [regionSelectorMode], REGION_MODE_RECORD
+    mov [shotFormat], SHOT_FMT_PNG
 
     ; Build Dark Modern UI Subsystems
     call CreateFontsAndBrushes
@@ -194,12 +202,13 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     call UpdateUIState
     call RefreshGalleryList
 
-    ; Register Global System Hotkeys (F5, F6, F10, F11, Shift+F11)
+    ; Register Global System Hotkeys (F2, F5, F6, F10, F11, Shift+F11)
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_START, 0, VK_F5
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_PAUSE, 0, VK_F6
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_STOP, 0, VK_F10
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_SCREENSHOT, 0, VK_F11
     invoke RegisterHotKey, [hWndMain], ID_HOTKEY_SNIP, MOD_SHIFT, VK_F11
+    invoke RegisterHotKey, [hWndMain], ID_HOTKEY_REGION, 0, VK_F2
 
     xor eax, eax
     ret
@@ -389,6 +398,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     ; Settings
     cmp eax, IDC_COMBO_FPS
     je .cmd_combo_fps
+    cmp eax, IDC_COMBO_SHOT_FMT
+    je .cmd_combo_shot_fmt
 
     xor eax, eax
     ret
@@ -558,6 +569,19 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     jmp .cmd_done
 .fps_60:
     mov [targetFps], 60
+    jmp .cmd_done
+
+.cmd_combo_shot_fmt:
+    mov eax, r8d
+    shr eax, 16 ; HIWORD(wParam) = notification
+    cmp eax, 1  ; CBN_SELCHANGE
+    jne .cmd_done
+    invoke SendMessageW, [hComboShotFormat], CB_GETCURSEL, 0, 0
+    cmp eax, 0
+    jl .cmd_done
+    mov [shotFormat], eax
+    jmp .cmd_done
+
 .cmd_done:
     xor eax, eax
     ret
@@ -609,6 +633,8 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     je .hk_shot
     cmp r8d, ID_HOTKEY_SNIP
     je .hk_snip
+    cmp r8d, ID_HOTKEY_REGION
+    je .hk_region
     xor eax, eax
     ret
 
@@ -637,6 +663,14 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     xor eax, eax
     ret
 
+.hk_region:
+    cmp [recState], STATE_IDLE
+    jne @f
+    call StartSelectRecordRegion
+@@:
+    xor eax, eax
+    ret
+
 ; ----------------------------------------------------------------------------
 ; Telemetry & Background Thread Events
 ; ----------------------------------------------------------------------------
@@ -661,7 +695,15 @@ proc MainWndProc uses rbx rsi rdi, hwnd, wmsg, wparam, lparam
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_STOP
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_SCREENSHOT
     invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_SNIP
+    invoke UnregisterHotKey, [hWndMain], ID_HOTKEY_REGION
 
+    ; Shutdown GDI+ engine
+    cmp [gdiplusToken], 0
+    je .check_rec_exit
+    invoke GdiplusShutdown, [gdiplusToken]
+    mov [gdiplusToken], 0
+
+.check_rec_exit:
     ; Terminate recording if still running
     cmp [recState], STATE_IDLE
     je .clean_exit
@@ -682,6 +724,7 @@ section '.idata' import data readable writeable
   library kernel32, 'KERNEL32.DLL',\
           user32,   'USER32.DLL',\
           gdi32,    'GDI32.DLL',\
+          gdiplus,  'GDIPLUS.DLL',\
           comctl32, 'COMCTL32.DLL',\
           shell32,  'SHELL32.DLL',\
           avifil32, 'AVIFIL32.DLL',\
@@ -693,6 +736,15 @@ section '.idata' import data readable writeable
   include 'INCLUDE\API\GDI32.INC'
   include 'INCLUDE\API\COMCTL32.INC'
   include 'INCLUDE\API\SHELL32.INC'
+
+  import gdiplus,\
+         GdiplusStartup,              'GdiplusStartup',\
+         GdiplusShutdown,             'GdiplusShutdown',\
+         GdipCreateBitmapFromHBITMAP, 'GdipCreateBitmapFromHBITMAP',\
+         GdipSaveImageToFile,         'GdipSaveImageToFile',\
+         GdipDisposeImage,            'GdipDisposeImage',\
+         GdipLoadImageFromFile,       'GdipLoadImageFromFile',\
+         GdipCreateHBITMAPFromBitmap, 'GdipCreateHBITMAPFromBitmap'
 
   import avifil32,\
          AVIFileInit,         'AVIFileInit',\

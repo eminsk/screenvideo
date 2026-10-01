@@ -93,9 +93,13 @@ class TestScreenCapturePro(unittest.TestCase):
             recordings_dir=self.rec_dir,
             screenshots_dir=self.snap_dir,
             hotkey_start="f8",
+            hotkey_region="f2",
+            screenshot_format="jpg",
         )
         self.assertEqual(config.fps, 60)
         self.assertEqual(config.hotkey_start, "f8")
+        self.assertEqual(config.hotkey_region, "f2")
+        self.assertEqual(config.screenshot_format, "jpg")
 
     def test_monitors_detection(self) -> None:
         """Test monitor enumeration."""
@@ -113,15 +117,37 @@ class TestScreenCapturePro(unittest.TestCase):
         self.assertEqual(frame.shape, (400, 600, 3))
 
     def test_screenshot_capture(self) -> None:
-        """Test capturing instant screenshot."""
+        """Test capturing instant screenshot in various formats."""
         region = Region(x=0, y=0, width=200, height=200)
-        snap_path = capture_screenshot(
+
+        # Default (PNG)
+        snap_path_png = capture_screenshot(
             region=region,
             output_dir=self.snap_dir,
             include_cursor=False,
         )
-        self.assertTrue(snap_path.exists())
-        self.assertEqual(snap_path.suffix.lower(), ".png")
+        self.assertTrue(snap_path_png.exists())
+        self.assertEqual(snap_path_png.suffix.lower(), ".png")
+
+        # Explicit JPG
+        snap_path_jpg = capture_screenshot(
+            region=region,
+            output_dir=self.snap_dir,
+            include_cursor=False,
+            format="jpg",
+        )
+        self.assertTrue(snap_path_jpg.exists())
+        self.assertEqual(snap_path_jpg.suffix.lower(), ".jpg")
+
+        # Explicit BMP
+        snap_path_bmp = capture_screenshot(
+            region=region,
+            output_dir=self.snap_dir,
+            include_cursor=False,
+            format="bmp",
+        )
+        self.assertTrue(snap_path_bmp.exists())
+        self.assertEqual(snap_path_bmp.suffix.lower(), ".bmp")
 
     def test_recorder_lifecycle(self) -> None:
         """Test recorder start, pause, resume, and stop sequence."""

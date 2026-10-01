@@ -53,7 +53,7 @@ section '.data' data readable writeable
   szLblMonitor          du 'Экран / Монитор:', 0
   szMonAll              du '🖥 Все мониторы (Виртуальный экран): 1920×1080', 0
   szMonPrimary          du '🖥 Монитор 1: 1920×1080 (Основной)', 0
-  szBtnSelectReg        du '✂ Выбрать область', 0
+  szBtnSelectReg        du '✂ Область (F2)', 0
   szBtnSnipReg          du '✂ Ножницы (Shift+F11)', 0
   szBtnResetFull        du '🖥 Сбросить на весь экран', 0
 
@@ -112,6 +112,10 @@ section '.data' data readable writeable
   szFmtAvi              du 'avi', 0
   szLblCodec            du 'Видеокодек FourCC:', 0
   szCodecDib            du 'DIB (несжатый)', 0
+  szLblShotFormat       du 'Формат снимков:', 0
+  szShotFmtPng          du 'PNG (без потерь)', 0
+  szShotFmtJpg          du 'JPG (сжатый)', 0
+  szShotFmtBmp          du 'BMP (несжатый)', 0
 
   szCardAudioTitle      du 'Настройки звука (Аудио)', 0
   szChkAudioSys2        du 'Записывать системный звук (динамики / наушники)', 0
@@ -125,11 +129,13 @@ section '.data' data readable writeable
   szLblHkStop           du 'Стоп записи:', 0
   szLblHkShot           du 'Снимок экрана:', 0
   szLblHkSnip           du 'Ножницы (снимок):', 0
+  szLblHkRegion         du 'Выбор области:', 0
   szKeyF5               du 'F5', 0
   szKeyF6               du 'F6', 0
   szKeyF10              du 'F10', 0
   szKeyF11              du 'F11', 0
   szKeyShiftF11         du 'Shift+F11', 0
+  szKeyF2               du 'F2', 0
 
   ; --------------------------------------------------------------------------
   ; Formats & Output Paths
@@ -153,6 +159,8 @@ section '.data' data readable writeable
   szWildcardMp4         du '\*.mp4', 0
   szWildcardAvi         du '\*.avi', 0
   szWildcardBmp         du '\*.bmp', 0
+  szWildcardPng         du '\*.png', 0
+  szWildcardJpg         du '\*.jpg', 0
   szBackslash           du '\', 0
 
   szAudioStopEvent      db 'ScreenVideoAudioStopEvent', 0
@@ -160,7 +168,10 @@ section '.data' data readable writeable
   fmtFfmpegPipe         du '"%s" -y -f rawvideo -vcodec rawvideo -s %ux%u -pix_fmt bgr0 -r %u -i - -c:v libx264 -preset ultrafast -pix_fmt yuv420p -crf 23 "%s"', 0
   fmtFfmpegMuxFinal     du '"%s" -y -i "%s" -i "%s" -c:v copy -c:a aac -b:a 192k -shortest "%s"', 0
   fmtRecFilenameRel     du '\recording_%04u%02u%02u_%02u%02u%02u.mp4', 0
-  fmtShotFilenameRel    du '\shot_%04u%02u%02u_%02u%02u%02u.bmp', 0
+  fmtShotFilenameRel    du '\shot_%04u%02u%02u_%02u%02u%02u.png', 0
+  fmtShotFilenamePng    du '\shot_%04u%02u%02u_%02u%02u%02u.png', 0
+  fmtShotFilenameJpg    du '\shot_%04u%02u%02u_%02u%02u%02u.jpg', 0
+  fmtShotFilenameBmp    du '\shot_%04u%02u%02u_%02u%02u%02u.bmp', 0
 
   szShellOpen           du 'open', 0
   szExplorer            du 'explorer.exe', 0
@@ -175,9 +186,17 @@ section '.data' data readable writeable
   szStatusShotSavedMsg  du 'Снимок экрана сохранён: %s (%u KB)', 0
   szStatusSnipSavedMsg  du 'Фрагмент скопирован в буфер обмена и сохранён: %s', 0
   szStatusCopiedToClipboard du 'Снимок скопирован в буфер обмена (Ctrl+V)!', 0
-  szStatusCopyError     du 'Ошибка копирования: выберите файл снимка (.bmp)', 0
+  szStatusCopyError     du 'Ошибка копирования: выберите файл снимка', 0
   szStatusDeletedMsg    du 'Файл удалён: %s', 0
   szStatusNoFileSelMsg  du 'Выберите файл из списка для открытия или удаления', 0
+
+  ; GDI+ Image Encoder CLSIDs
+  align 16
+  clsidPng db 0x06, 0xF4, 0x7C, 0x55, 0x04, 0x1A, 0xD3, 0x11, 0x9A, 0x73, 0x00, 0x00, 0xF8, 0x1E, 0xF3, 0x2E
+  align 16
+  clsidJpg db 0x01, 0xF4, 0x7C, 0x55, 0x04, 0x1A, 0xD3, 0x11, 0x9A, 0x73, 0x00, 0x00, 0xF8, 0x1E, 0xF3, 0x2E
+  align 16
+  clsidBmp db 0x00, 0xF4, 0x7C, 0x55, 0x04, 0x1A, 0xD3, 0x11, 0x9A, 0x73, 0x00, 0x00, 0xF8, 0x1E, 0xF3, 0x2E
 
   ; Common Controls Configuration
   align 8

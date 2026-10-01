@@ -231,6 +231,118 @@ proc RefreshGalleryList uses rbx rsi rdi
 
     invoke FindClose, [gal_hFind]
 
+.scan_png:
+    ; 3. SCAN SCREENSHOTS (*.png)
+    invoke FindFirstFileW, addr szMaskPng, addr findDataW
+    cmp rax, -1
+    je .scan_jpg
+    mov [gal_hFind], rax
+
+.loop_png:
+    test [findDataW.dwFileAttributes], 16
+    jnz .next_png
+
+    fastcall FormatFileSize, [findDataW.nFileSizeLow], addr gal_sizeStr
+
+    lea rcx, [findDataW.ftLastWriteTime]
+    invoke FileTimeToLocalFileTime, rcx, addr ftLocal
+    invoke FileTimeToSystemTime, addr ftLocal, addr stLocal
+
+    movzx r10, [stLocal.wYear]
+    movzx r11, [stLocal.wMonth]
+    movzx r12, [stLocal.wDay]
+    movzx r13, [stLocal.wHour]
+    movzx r14, [stLocal.wMinute]
+    invoke wsprintfW, addr gal_resStr, addr fmtDateTime, r10, r11, r12, r13, r14
+
+    mov dword [lvItemW.mask], LVIF_TEXT
+    mov eax, [gal_itemIndex]
+    mov [lvItemW.iItem], eax
+    mov [lvItemW.iSubItem], 0
+    lea rax, [szTypeShot]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_INSERTITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 1
+    lea rax, [findDataW.cFileName]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 2
+    lea rax, [gal_sizeStr]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 3
+    lea rax, [gal_resStr]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    inc [gal_itemIndex]
+
+.next_png:
+    invoke FindNextFileW, [gal_hFind], addr findDataW
+    test eax, eax
+    jnz .loop_png
+
+    invoke FindClose, [gal_hFind]
+
+.scan_jpg:
+    ; 4. SCAN SCREENSHOTS (*.jpg)
+    invoke FindFirstFileW, addr szMaskJpg, addr findDataW
+    cmp rax, -1
+    je .done
+    mov [gal_hFind], rax
+
+.loop_jpg:
+    test [findDataW.dwFileAttributes], 16
+    jnz .next_jpg
+
+    fastcall FormatFileSize, [findDataW.nFileSizeLow], addr gal_sizeStr
+
+    lea rcx, [findDataW.ftLastWriteTime]
+    invoke FileTimeToLocalFileTime, rcx, addr ftLocal
+    invoke FileTimeToSystemTime, addr ftLocal, addr stLocal
+
+    movzx r10, [stLocal.wYear]
+    movzx r11, [stLocal.wMonth]
+    movzx r12, [stLocal.wDay]
+    movzx r13, [stLocal.wHour]
+    movzx r14, [stLocal.wMinute]
+    invoke wsprintfW, addr gal_resStr, addr fmtDateTime, r10, r11, r12, r13, r14
+
+    mov dword [lvItemW.mask], LVIF_TEXT
+    mov eax, [gal_itemIndex]
+    mov [lvItemW.iItem], eax
+    mov [lvItemW.iSubItem], 0
+    lea rax, [szTypeShot]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_INSERTITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 1
+    lea rax, [findDataW.cFileName]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 2
+    lea rax, [gal_sizeStr]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    mov dword [lvItemW.iSubItem], 3
+    lea rax, [gal_resStr]
+    mov [lvItemW.pszText], rax
+    invoke SendMessageW, [hListGallery], LVM_SETITEMW, 0, addr lvItemW
+
+    inc [gal_itemIndex]
+
+.next_jpg:
+    invoke FindNextFileW, [gal_hFind], addr findDataW
+    test eax, eax
+    jnz .loop_jpg
+
+    invoke FindClose, [gal_hFind]
+
 .done:
     ret
 endp
@@ -369,6 +481,8 @@ endp
 ; CopySelectedGalleryItemToClipboard - Copies selected screenshot BMP to clipboard
 ; ----------------------------------------------------------------------------
 proc CopySelectedGalleryItemToClipboard uses rbx rsi rdi r12 r13
+    local gpImg:QWORD
+    local hBmp:QWORD
     local hFile:QWORD
     local dwFileSize:DWORD
     local dwDibSize:DWORD
@@ -381,7 +495,40 @@ proc CopySelectedGalleryItemToClipboard uses rbx rsi rdi r12 r13
     test eax, eax
     jz .no_sel
 
-    ; Open selected file for reading
+    ; 1. Try GDI+ loader (opens PNG, JPG, BMP seamlessly)
+    lea rax, [gpImg]
+    invoke GdipLoadImageFromFile, addr tempBuf, rax
+    test eax, eax
+    jnz .fallback_bmp_reader
+
+    lea rax, [hBmp]
+    invoke GdipCreateHBITMAPFromBitmap, [gpImg], rax, 0
+    test eax, eax
+    jnz .dispose_gp_and_fallback
+
+    invoke OpenClipboard, [hWndMain]
+    test eax, eax
+    jz .delete_hbmp
+
+    invoke EmptyClipboard
+    invoke SetClipboardData, 2, [hBmp] ; CF_BITMAP = 2 (Windows auto-synthesizes CF_DIB)
+    invoke CloseClipboard
+
+    invoke GdipDisposeImage, [gpImg]
+
+    ; Sound and status feedback
+    invoke MessageBeep, 0x00000040 ; MB_ICONASTERISK
+    invoke SetWindowTextW, [hStatusBar], addr szStatusCopiedToClipboard
+    mov eax, 1
+    ret
+
+.delete_hbmp:
+    invoke DeleteObject, [hBmp]
+.dispose_gp_and_fallback:
+    invoke GdipDisposeImage, [gpImg]
+
+.fallback_bmp_reader:
+    ; 2. Fallback: Direct BMP file reader
     invoke CreateFileW, addr tempBuf, 0x80000000, 1, NULL, 3, 0x80, NULL ; GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
     cmp rax, -1
     je .file_error

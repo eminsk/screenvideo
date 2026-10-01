@@ -81,6 +81,12 @@ proc InitializeAppDirectories uses rbx rsi rdi
     invoke lstrcpyW, addr szMaskBmp, addr szShotDir
     invoke lstrcatW, addr szMaskBmp, addr szWildcardBmp
 
+    invoke lstrcpyW, addr szMaskPng, addr szShotDir
+    invoke lstrcatW, addr szMaskPng, addr szWildcardPng
+
+    invoke lstrcpyW, addr szMaskJpg, addr szShotDir
+    invoke lstrcatW, addr szMaskJpg, addr szWildcardJpg
+
     ; 8. Build temp audio WAV path: "<szRecDir>\temp_audio.wav"
     invoke lstrcpyW, addr szAudioTempWav, addr szRecDir
     invoke lstrcatW, addr szAudioTempWav, addr szBackslash
@@ -163,6 +169,8 @@ endp
 ; SaveBitmapToFile - Writes 24-bit uncompressed BMP to disk
 ; ----------------------------------------------------------------------------
 proc SaveBitmapToFile uses rbx rsi rdi
+    local gpBitmap:QWORD
+
     ; Calculate 4-byte aligned stride: ((nWidth * 3 + 3) & ~3)
     mov eax, [shot_cW]
     lea eax, [eax*2 + eax]
@@ -193,6 +201,35 @@ proc SaveBitmapToFile uses rbx rsi rdi
     mov eax, [sb_imageSize]
     mov dword [rdi+20], eax            ; biSizeImage
 
+    ; Allocate pixel memory
+    invoke VirtualAlloc, NULL, [sb_imageSize], 0x1000 or 0x2000, 4
+    test rax, rax
+    jz .fail
+    mov [sb_pBits], rax
+
+    ; Extract raw DIB bits from HBITMAP
+    invoke GetDIBits, [shot_hMemDC], [shot_hBmp], 0, [shot_cH], [sb_pBits], addr sb_bih, DIB_RGB_COLORS
+
+    ; Check selected screenshot format
+    cmp [shotFormat], SHOT_FMT_BMP
+    je .save_bmp_file
+
+    ; Save via GDI+ (PNG or JPG)
+    lea rax, [gpBitmap]
+    invoke GdipCreateBitmapFromHBITMAP, [shot_hBmp], 0, rax
+    test eax, eax
+    jnz .save_bmp_file ; fallback to BMP if GDI+ fails
+
+    lea r8, [clsidPng]
+    cmp [shotFormat], SHOT_FMT_JPG
+    jne @f
+    lea r8, [clsidJpg]
+@@:
+    invoke GdipSaveImageToFile, [gpBitmap], addr szCurrentShotFile, r8, NULL
+    invoke GdipDisposeImage, [gpBitmap]
+    jmp .after_file_save
+
+.save_bmp_file:
     ; Setup BITMAPFILEHEADER (14 bytes)
     lea rdi, [sb_bfh]
     mov word [rdi], 0x4D42             ; bfType = 'BM'
@@ -203,20 +240,11 @@ proc SaveBitmapToFile uses rbx rsi rdi
     mov word [rdi+8], 0                ; bfReserved2
     mov dword [rdi+10], 54             ; bfOffBits = 54
 
-    ; Allocate pixel memory
-    invoke VirtualAlloc, NULL, [sb_imageSize], 0x1000 or 0x2000, 4
-    test rax, rax
-    jz .fail
-    mov [sb_pBits], rax
-
-    ; Extract raw DIB bits from HBITMAP
-    invoke GetDIBits, [shot_hMemDC], [shot_hBmp], 0, [shot_cH], [sb_pBits], addr sb_bih, DIB_RGB_COLORS
-
     ; Create Output File (Wide API)
     invoke CreateFileW, addr szCurrentShotFile, GENERIC_WRITE, 0, NULL,\
            CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL
     cmp rax, -1
-    je .free_mem
+    je .after_file_save
     mov [sb_hFile], rax
 
     ; Write BITMAPFILEHEADER (14 bytes)
@@ -230,8 +258,8 @@ proc SaveBitmapToFile uses rbx rsi rdi
 
     invoke CloseHandle, [sb_hFile]
 
-.free_mem:
-    ; Auto-copy to Windows Clipboard if enabled
+.after_file_save:
+    ; Auto-copy to Windows Clipboard if enabled (always standard CF_DIB format)
     cmp [copyToClipboard], 1
     jne @f
     call CopyDIBBufferToClipboard
@@ -282,7 +310,20 @@ proc TakeInstantScreenshot uses rbx rsi rdi
     movzx r13, [stLocal.wHour]
     movzx r14, [stLocal.wMinute]
     movzx r15, [stLocal.wSecond]
-    invoke wsprintfW, addr tempBuf, addr fmtShotFilenameRel, r10, r11, r12, r13, r14, r15
+
+    lea rax, [fmtShotFilenamePng]
+    cmp [shotFormat], SHOT_FMT_JPG
+    je .inst_fmt_jpg
+    cmp [shotFormat], SHOT_FMT_BMP
+    je .inst_fmt_bmp
+    jmp .inst_fmt_done
+.inst_fmt_jpg:
+    lea rax, [fmtShotFilenameJpg]
+    jmp .inst_fmt_done
+.inst_fmt_bmp:
+    lea rax, [fmtShotFilenameBmp]
+.inst_fmt_done:
+    invoke wsprintfW, addr tempBuf, rax, r10, r11, r12, r13, r14, r15
     invoke lstrcpyW, addr szCurrentShotFile, addr szShotDir
     invoke lstrcatW, addr szCurrentShotFile, addr tempBuf
 
@@ -368,7 +409,20 @@ proc TakeSnipScreenshot uses rbx rsi rdi, sX:DWORD, sY:DWORD, sW:DWORD, sH:DWORD
     movzx r13, [stLocal.wHour]
     movzx r14, [stLocal.wMinute]
     movzx r15, [stLocal.wSecond]
-    invoke wsprintfW, addr tempBuf, addr fmtShotFilenameRel, r10, r11, r12, r13, r14, r15
+
+    lea rax, [fmtShotFilenamePng]
+    cmp [shotFormat], SHOT_FMT_JPG
+    je .snip_fmt_jpg
+    cmp [shotFormat], SHOT_FMT_BMP
+    je .snip_fmt_bmp
+    jmp .snip_fmt_done
+.snip_fmt_jpg:
+    lea rax, [fmtShotFilenameJpg]
+    jmp .snip_fmt_done
+.snip_fmt_bmp:
+    lea rax, [fmtShotFilenameBmp]
+.snip_fmt_done:
+    invoke wsprintfW, addr tempBuf, rax, r10, r11, r12, r13, r14, r15
     invoke lstrcpyW, addr szCurrentShotFile, addr szShotDir
     invoke lstrcatW, addr szCurrentShotFile, addr tempBuf
 

@@ -100,9 +100,10 @@ class RecordView(ttk.Frame):
         reg_row = ttk.Frame(card_target)
         reg_row.pack(fill=X, pady=2)
 
+        reg_k = getattr(self._app.config, "hotkey_region", "F2").upper()
         self._btn_select_region = ttk.Button(
             reg_row,
-            text="✂ Выбрать область",
+            text=f"📐 ОБЛАСТЬ ({reg_k})",
             bootstyle="secondary",
             command=self._app.on_open_region_selector,
         )
@@ -330,3 +331,5 @@ class RecordView(ttk.Frame):
         )
         snip_k = getattr(self._app.config, "hotkey_snip", "SHIFT+F11").upper()
         self._btn_snip.configure(text=f"✂ ВЫДЕЛЕНИЕ ({snip_k})")
+        reg_k = getattr(self._app.config, "hotkey_region", "F2").upper()
+        self._btn_select_region.configure(text=f"📐 ОБЛАСТЬ ({reg_k})")

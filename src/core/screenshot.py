@@ -22,16 +22,23 @@ def capture_screenshot(
     include_cursor: bool = True,
     highlight_cursor: bool = False,
     copy_to_clipboard: bool = True,
+    format: str = "png",
 ) -> Path:
     """
-    Capture instant screenshot to PNG file and optionally copy to clipboard.
+    Capture instant screenshot to file (PNG, JPG, BMP) and optionally copy to clipboard.
     Returns path to saved image file.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    fmt = format.lower().strip().lstrip(".")
+    if fmt not in ("png", "jpg", "jpeg", "bmp"):
+        fmt = "png"
+    if fmt == "jpeg":
+        fmt = "jpg"
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_path = output_dir / f"screenshot_{timestamp}.png"
+    file_path = output_dir / f"screenshot_{timestamp}.{fmt}"
 
     with mss.MSS() as sct:
         if region and region.is_valid:
@@ -58,7 +65,14 @@ def capture_screenshot(
                 highlight=highlight_cursor,
             )
 
-        cv2.imwrite(str(file_path), frame, [cv2.IMWRITE_PNG_COMPRESSION, 4])
+        if fmt == "png":
+            params = [cv2.IMWRITE_PNG_COMPRESSION, 4]
+        elif fmt == "jpg":
+            params = [cv2.IMWRITE_JPEG_QUALITY, 95]
+        else:
+            params = []
+
+        cv2.imwrite(str(file_path), frame, params)
 
         if copy_to_clipboard:
             try:

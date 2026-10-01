@@ -61,16 +61,19 @@ section '.bss' readable writeable
   hChkAudioSys2         dq ?
   hChkAudioMic2         dq ?
   hComboAudioBitrate    dq ?
+  hComboShotFormat      dq ?
   hLblHkStart           dq ?
   hLblHkPause           dq ?
   hLblHkStop            dq ?
   hLblHkShot            dq ?
   hLblHkSnip            dq ?
+  hLblHkRegion          dq ?
 
   ; Application State
   currentTab            dd ?
   recState              dd ?
   targetFps             dd ?
+  shotFormat            dd ?
   includeCursor         dd ?
   highlightCursor       dd ?
   showCountdown         dd ?
@@ -81,6 +84,10 @@ section '.bss' readable writeable
   copyToClipboard       dd ?
   regionSelectorMode    dd ?
   gal_filterMode        dd ?
+
+  ; GDI+ State
+  gdiplusToken          dq ?
+  gdiplusStartupInput   db 24 dup(?)
 
   ; Screen Capture Bounds
   isCustomRegion        dd ?
@@ -187,6 +194,8 @@ section '.bss' readable writeable
   szMaskMp4             du 260 dup(?)
   szMaskAvi             du 260 dup(?)
   szMaskBmp             du 260 dup(?)
+  szMaskPng             du 260 dup(?)
+  szMaskJpg             du 260 dup(?)
   szFfmpegPipeCmd       du 1024 dup(?)
 
   ; Real-Time Video Pipe Handles & Structures
