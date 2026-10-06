@@ -2,6 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-4CAF50.svg)](LICENSE)
+[![MCP Server](https://img.shields.io/badge/MCP-Server%20Ready-blueviolet?logo=modelcontextprotocol)](https://github.com/eminsk/screenvideo)
 [![Architecture: FASM x64](https://img.shields.io/badge/Native%20Build-FASM%20x64%20(~37%20KB)-E91E63.svg)](asm/README.md)
 [![CI](https://github.com/eminsk/screenvideo/actions/workflows/ci.yml/badge.svg)](https://github.com/eminsk/screenvideo/actions/workflows/ci.yml)
 
@@ -130,17 +131,69 @@ build.bat
 
 ---
 
+## 🤖 Native Model Context Protocol (MCP) Server
+
+ScreenCapture Pro includes a native **Model Context Protocol (MCP)** server (`screenvideo-mcp`), allowing AI agents (Claude Desktop, Cursor, Antigravity, OpenManus) to inspect display configurations, capture screenshots or bounding regions with mouse pointers, enumerate WASAPI audio devices, and copy images directly to the Windows clipboard over JSON-RPC 2.0 stdio.
+
+### 🛠 Available MCP Tools
+
+| Tool | Parameters | Description |
+|:---|:---|:---|
+| `screen_list_monitors` | *(none)* | Discover physical & virtual monitors, geometries, resolutions, and primary screen flags |
+| `screen_capture` | `monitor_index, x, y, width, height, format, save_dir, include_cursor, highlight_cursor, return_base64, copy_to_clipboard` | Capture high-resolution screenshot of a monitor or region with optional cursor halo and base64 export |
+| `screen_list_audio_devices` | *(none)* | Enumerate output speakers (supporting WASAPI loopback audio recording) and microphones |
+| `screen_copy_to_clipboard` | `file_path` | Copy an image file (PNG/JPG/BMP) directly to the Windows clipboard (`CF_DIB`) |
+
+### 🚀 Running the Server
+
+Run directly via the CLI:
+```bash
+# Using Python module
+python -m src.mcp_server
+
+# Or via CLI script
+screenvideo-mcp
+```
+
+### ⚙️ Client Integration Configurations
+
+#### Cursor (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "screenvideo": {
+      "command": "screenvideo-mcp"
+    }
+  }
+}
+```
+
+#### Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "screenvideo": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"]
+    }
+  }
+}
+```
+
+---
+
 ## 🌐 Author & Open Source Ecosystem
 
 **ScreenCapture Pro** is maintained by **[@eminsk](https://github.com/eminsk)** as part of an active suite of systems engineering and quantitative open-source projects:
 
 ### Maintained Projects
-* **[agentjit](https://github.com/eminsk/agentjit)** — Just-In-Time Compiler for AI Agent Trajectories compiling workflows into 0.08ms Python code (Featured as #1 Top Story in The Daily Diff).
-* **[nanorecall](https://github.com/eminsk/nanorecall)** — 100% Private, Zero-Cloud desktop screen and memory search engine in <200KB.
-* **[nanovector](https://github.com/eminsk/nanovector)** — Ultra-compact SQLite of vector search in ~120KB with AVX2+FMA and hand-crafted FASM x64 kernels.
-* **[nanogemm](https://github.com/eminsk/nanogemm)** — Minimalist, bare-metal SIMD & Assembly GEMM engine for Python. Sub-microsecond CPU matrix multiplication for AI & scientific computing (2.8x faster than NumPy on small tensors).
-* **[xlsx_vievers](https://github.com/eminsk/xlsx_vievers)** — Desktop spreadsheet processor featuring 80+ formula functions, Chart Wizard, AutoFilter, Conditional Formatting, and SIMD SSE2 math engine with PyPI and conda-forge packaging.
-* **[yfinance-ta-patterns](https://github.com/eminsk/yfinance-ta-patterns)** — Technical analysis candlestick scanner powered by TA-Lib with quantitative AI confluence scoring, automated trade setups, and 37 automated CI tests on Python 3.12–3.15.
+* **[agentjit](https://github.com/eminsk/agentjit)** — Just-In-Time Compiler for AI Agent Trajectories compiling workflows into 0.08ms Python code with Native MCP Server (`agentjit-mcp`). Featured as #1 Top Story in The Daily Diff.
+* **[nanorecall](https://github.com/eminsk/nanorecall)** — 100% Private, Zero-Cloud desktop screen and memory search engine in <200KB with Native MCP Server (`nanorecall-mcp`).
+* **[nanovector](https://github.com/eminsk/nanovector)** — Ultra-compact SQLite of vector search in ~120KB with AVX2+FMA, hand-crafted FASM x64 kernels, and Native MCP Server (`nanovector-mcp`).
+* **[nanogemm](https://github.com/eminsk/nanogemm)** — Minimalist, bare-metal SIMD & Assembly GEMM engine for Python. Sub-microsecond CPU matrix multiplication and Native MCP Server (`nanogemm-mcp`).
+* **[xlsx_vievers](https://github.com/eminsk/xlsx_vievers)** — Desktop spreadsheet processor with headless 129-function formula engine, SIMD SSE2 math, and Native MCP Server (`xlsx-viewer-mcp`).
+* **[yfinance-ta-patterns](https://github.com/eminsk/yfinance-ta-patterns)** — Technical analysis candlestick scanner with quantitative AI confluence scoring, backtesting, and Native MCP Server (`yfinance-ta-mcp`).
+* **[avito-sdk](https://github.com/eminsk/avito-sdk)** — High-performance headless Avito scraping & data extraction SDK with price drop tracking and Native MCP Server (`avito-mcp`).
 * **[StackOverflowAPI](https://github.com/eminsk/StackOverflowAPI)** — Modern bilingual desktop reference and search client for Stack Overflow with native x64 FASM and CustomTkinter editions.
 
 ### Community Open Source Contributions

@@ -22,6 +22,11 @@ dev = [
     "ruff>=0.3.0",
 ]
 
+[project.scripts]
+screenvideo = "main:main"
+screenvideo-mcp = "src.mcp_server:main_mcp"
+
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
