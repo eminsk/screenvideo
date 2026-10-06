@@ -212,18 +212,21 @@ class ScreenVideoMCPServer:
                 tool_name = params.get("name", "")
                 arguments = params.get("arguments") or {}
                 result_payload = self._call_tool(tool_name, arguments)
+                call_result: dict[str, Any] = {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": json.dumps(result_payload, ensure_ascii=False, indent=2),
+                        }
+                    ],
+                    "isError": False,
+                }
+                if isinstance(result_payload, dict):
+                    call_result["structuredContent"] = result_payload
                 return {
                     "jsonrpc": "2.0",
                     "id": req_id,
-                    "result": {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": json.dumps(result_payload, ensure_ascii=False, indent=2),
-                            }
-                        ],
-                        "isError": False,
-                    },
+                    "result": call_result,
                 }
 
             return {
