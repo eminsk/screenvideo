@@ -1,6 +1,6 @@
 [project]
 name = "screenvideo"
-version = "1.0.0"
+version = "2.1.1"
 description = "ScreenCapture Pro - Professional zero-memory screen recorder with modern UI and hotkey controls"
 readme = "README.md"
 requires-python = ">=3.10"
