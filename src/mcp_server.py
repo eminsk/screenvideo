@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import base64
 import contextlib
-import io
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -62,8 +60,14 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
                 },
                 "x": {"type": "integer", "description": "Optional bounding box X coordinate."},
                 "y": {"type": "integer", "description": "Optional bounding box Y coordinate."},
-                "width": {"type": "integer", "description": "Optional bounding box width (min 16)."},
-                "height": {"type": "integer", "description": "Optional bounding box height (min 16)."},
+                "width": {
+                    "type": "integer",
+                    "description": "Optional bounding box width (min 16).",
+                },
+                "height": {
+                    "type": "integer",
+                    "description": "Optional bounding box height (min 16).",
+                },
                 "include_cursor": {
                     "type": "boolean",
                     "description": "Include mouse cursor in the capture (default: True).",
@@ -193,7 +197,7 @@ class ScreenVideoMCPServer:
                         },
                         "serverInfo": {
                             "name": "screenvideo-mcp",
-                            "version": "1.0.0",
+                            "version": pkg_ver,
                         },
                     },
                 }
@@ -252,6 +256,7 @@ class ScreenVideoMCPServer:
         with contextlib.redirect_stdout(sys.stderr):
             if name == "screen_list_monitors":
                 from src.core.monitors import get_available_monitors
+
                 monitors = get_available_monitors()
                 return {
                     "monitors": [
@@ -318,16 +323,19 @@ class ScreenVideoMCPServer:
                 mics_list = []
                 try:
                     import soundcard as sc
+
                     speakers = sc.all_speakers()
                     for s in speakers:
                         speakers_list.append({"name": s.name, "id": str(s.id)})
                     mics = sc.all_microphones(include_loopback=True)
                     for m in mics:
-                        mics_list.append({
-                            "name": m.name,
-                            "id": str(m.id),
-                            "is_loopback": getattr(m, "isloopback", False),
-                        })
+                        mics_list.append(
+                            {
+                                "name": m.name,
+                                "id": str(m.id),
+                                "is_loopback": getattr(m, "isloopback", False),
+                            }
+                        )
                 except Exception as exc:
                     return {"speakers": [], "microphones": [], "error": str(exc)}
 

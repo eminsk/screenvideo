@@ -3,15 +3,14 @@ Unit Tests for screenvideo Native MCP Server (JSON-RPC 2.0 stdio)
 """
 
 import json
-import pytest
 
 import mss
 import numpy as np
+import pytest
 
 from src.mcp_server import (
-    ScreenVideoMCPServer,
     LATEST_PROTOCOL_VERSION,
-    SUPPORTED_PROTOCOL_VERSIONS,
+    ScreenVideoMCPServer,
 )
 
 
@@ -31,6 +30,7 @@ class MockScreenShot:
 @pytest.fixture(autouse=True)
 def mock_mss_grab(monkeypatch):
     """Ensure mss.MSS.grab works cleanly in headless/CI test environments."""
+
     def _mock_grab(self, *args, **kwargs):
         monitor = args[0] if args and isinstance(args[0], dict) else kwargs.get("monitor", {})
         w = monitor.get("width", 320) if isinstance(monitor, dict) else 320
@@ -38,7 +38,6 @@ def mock_mss_grab(monkeypatch):
         return MockScreenShot(w, h)
 
     monkeypatch.setattr(mss.MSS, "grab", _mock_grab)
-
 
 
 def test_mcp_initialize_negotiation():
